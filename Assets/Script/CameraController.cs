@@ -17,7 +17,7 @@ public class CameraController : MonoBehaviour
 
     [Header("Distance/Offsets")]
     public Vector3 defaultOffset = new Vector3(0f, 0.15f, -4.5f); // 평소
-    public Vector3 aimOffset = new Vector3(0.35f, 0.05f, -2.0f); // 조준 시(오른쪽 어깨)
+    public Vector3 aimOffset = new Vector3(0.6f, 0.15f, -2.0f); // 조준 시(오른쪽 어깨)
     public float followLerp = 15f;            // 위치 보간
     public float aimLerp = 12f;            // 오프셋/FOV 보간
 

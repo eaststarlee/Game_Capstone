@@ -2,28 +2,36 @@ using UnityEngine;
 
 public class WeaponSocketBinder : MonoBehaviour
 {
-    public Animator animator;       // Player의 Animator
-    public GameObject weaponRoot;   // 손에 들 무기(라이플 인스턴스 최상위)
+    public Animator animator;
+    public GameObject weaponRoot;
     public string socketName = "WeaponSocket";
+
+    [Header("Offsets")]
+    public Vector3 localRotationOffset = Vector3.zero;   // 기본 0 권장
+    public Vector3 localPositionOffset = Vector3.zero;   // 필요하면 약간 보정
 
     void Awake()
     {
         if (!animator) animator = GetComponentInChildren<Animator>();
         if (!animator || !weaponRoot) return;
 
-        // 오른손 뼈 Transform 가져오기 (Humanoid 필수)
         var rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-        if (!rightHand) { Debug.LogWarning("RightHand bone not found"); return; }
+        if (!rightHand) return;
 
-        // 소켓 생성(없으면)
         Transform socket = rightHand.Find(socketName);
         if (!socket)
         {
             socket = new GameObject(socketName).transform;
-            socket.SetParent(rightHand, false); // 로컬 0,0,0
+            socket.SetParent(rightHand, false);
+            socket.localPosition = Vector3.zero;
+            socket.localRotation = Quaternion.identity;
+            socket.localScale = Vector3.one;
         }
 
-        // 무기 장착
-        weaponRoot.transform.SetParent(socket, false); // 위치/회전 자동 정렬
+        var t = weaponRoot.transform;
+        t.SetParent(socket, false);
+        t.localPosition = localPositionOffset;                  // ★ 핵심: 0으로 스냅
+        t.localRotation = Quaternion.Euler(localRotationOffset);
+        t.localScale = Vector3.one;
     }
 }
