@@ -7,6 +7,12 @@ public class Player : MonoBehaviour
     public Transform cameraTransform;    // 메인 카메라
     public Animator animator;            // 연결된 Animator (in-place 애니메이션: Apply Root Motion 끄기)
 
+    // ★ 추가: 조준 상태를 알기 위한 참조(인스펙터에 PlayerWeaponController 드래그)
+    [Header("Combat / Aim")]
+    public PlayerWeaponController weaponController;
+    [Tooltip("조준(ADS) 중 이동 속도 배율")]
+    public float aimSpeedMultiplier = 0.6f;
+
     [Header("Move Settings")]
     public float walkSpeed = 3f;
     public float runSpeed = 6f;
@@ -48,8 +54,7 @@ public class Player : MonoBehaviour
         cc = GetComponent<CharacterController>();
         if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
         if (animator == null) animator = GetComponentInChildren<Animator>();
-        // Animator에서 Apply Root Motion 꺼둘 것(코드로 이동 제어)
-        if (animator != null) animator.applyRootMotion = false;
+        if (animator != null) animator.applyRootMotion = false; // 이동은 코드로 제어
     }
 
     void Update()
@@ -68,32 +73,42 @@ public class Player : MonoBehaviour
         float z = Input.GetAxisRaw("Vertical");
         inputDir = new Vector3(x, 0f, z).normalized;
         inputMag = inputDir.magnitude;
-        isSprinting = allowSprint && Input.GetKey(sprintKey) && inputMag > 0.1f;
+
+        // ★ 조준 중에는 스프린트 금지(원하면 허용해도 됨)
+        bool aiming = weaponController && weaponController.IsAiming;
+        isSprinting = !aiming && allowSprint && Input.GetKey(sprintKey) && inputMag > 0.1f;
     }
 
     void HandleGroundCheck()
     {
-        // CharacterController.isGrounded 사용 (간단하고 일반적)
         isGrounded = cc.isGrounded;
-        // 바닥에 붙어있다면 작은 음수로 고정(중력 누적 방지)
-        if (isGrounded && vertVelocityY < 0f) vertVelocityY = -2f;
+        if (isGrounded && vertVelocityY < 0f) vertVelocityY = -2f; // 중력 누적 방지
     }
 
     void HandleMovement()
     {
-        float targetSpeed = (isSprinting ? runSpeed : walkSpeed) * inputMag;
+        bool aiming = weaponController && weaponController.IsAiming;
+
+        float baseSpeed = (isSprinting ? runSpeed : walkSpeed);
+        if (aiming) baseSpeed *= aimSpeedMultiplier;           // ★ 조준 중 속도 낮춤
+
+        float targetSpeed = baseSpeed * inputMag;
         float smoothTime = 1f / Mathf.Max(0.0001f, acceleration);
         currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref speedVelocity, smoothTime);
 
         if (inputMag >= 0.01f)
         {
             float cameraYaw = cameraTransform.eulerAngles.y;
-            Vector3 moveDir = Quaternion.Euler(0f, cameraYaw, 0f) * inputDir;
+            Vector3 moveDir = Quaternion.Euler(0f, cameraYaw, 0f) * inputDir; // 카메라 기준 스트레이프
 
-            // 부드러운 회전 (전방 방향으로)
-            float targetAngle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg;
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, rotationSmoothTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            // ★ 조준 중에는 이 스크립트가 회전을 덮어쓰지 않는다
+            //    (플레이어 회전은 PlayerWeaponController.LateUpdate에서 카메라 yaw로 맞춤)
+            if (!aiming)
+            {
+                float targetAngle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg;
+                float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, rotationSmoothTime);
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            }
 
             Vector3 horizontalMove = moveDir.normalized * currentSpeed;
             Vector3 totalMove = horizontalMove + Vector3.up * vertVelocityY;
@@ -103,7 +118,6 @@ public class Player : MonoBehaviour
         {
             // 정지 상태: 수직 이동(중력)만 적용
             cc.Move(Vector3.up * vertVelocityY * Time.deltaTime);
-            // 속도가 0에 수렴
             currentSpeed = Mathf.SmoothDamp(currentSpeed, 0f, ref speedVelocity, 0.08f);
         }
     }
@@ -112,14 +126,9 @@ public class Player : MonoBehaviour
     {
         if (isGrounded && Input.GetKeyDown(jumpKey))
         {
-            // 점프 속도 계산: v = sqrt(2 * g * h)
-            vertVelocityY = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            // Animator에 Jump 트리거 전송
+            vertVelocityY = Mathf.Sqrt(jumpHeight * -2f * gravity); // v = sqrt(2*g*h)
             animator?.SetTrigger(paramJump);
-            // isGrounded는 다음 프레임에 false가 될 수 있음(Physics)
         }
-
-        // 중력 누적
         vertVelocityY += gravity * Time.deltaTime;
     }
 
@@ -127,29 +136,16 @@ public class Player : MonoBehaviour
     {
         if (animator == null) return;
 
-        // Speed는 0..1로 정규화 (runSpeed 기준)
         float speedNormalized = runSpeed > 0f ? Mathf.Clamp01(currentSpeed / runSpeed) : 0f;
         animator.SetFloat(paramSpeed, speedNormalized);
 
-        // isWalk: 이동 중이면서 달리는 상태가 아닌 경우
         bool walkState = inputMag > 0.01f && !isSprinting;
         animator.SetBool(paramIsWalk, walkState);
-
-        // isRun: 스프린트 중
         animator.SetBool(paramIsRun, isSprinting);
-
-        // Isgrounded: 현재 접지 여부
         animator.SetBool(paramIsGrounded, isGrounded);
-
-        // *Optional debug landing detection* (Animator 쪽에서 FallingIdle->Landing를 Isgrounded==true 조건으로 설정하면 된다)
-        if (!prevGrounded && isGrounded)
-        {
-            // 착지 감지: Animator의 조건(Isgrounded true)이 활성화되면 Landing 상태로 전환되게 세팅
-            // (여기서는 별도의 트리거를 쓰지 않고 Isgrounded bool로 전환을 제어함)
-        }
     }
 
-    // 디버그용: 바닥 체크 시각화 (Inspector에서 보려면 플레이 중에 선택)
+    // 디버그용: 바닥 체크 시각화
     void OnDrawGizmosSelected()
     {
         if (!Application.isPlaying) return;
