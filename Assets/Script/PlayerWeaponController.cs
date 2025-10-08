@@ -1,6 +1,7 @@
 using UnityEngine;
 
-[DefaultExecutionOrder(1000)] // Animator  Ŀ LateUpdate  
+[DefaultExecutionOrder(1000)]
+[DisallowMultipleComponent]
 public class PlayerWeaponController : MonoBehaviour
 {
     [Header("References")]
@@ -10,33 +11,30 @@ public class PlayerWeaponController : MonoBehaviour
     public Weapon currentWeapon;
     public GameObject weaponRoot;
 
-    [Header("Aim Turning")]
-    public Transform playerRoot;            // (Yaw) ȸ 
-    public float aimTurnSpeed = 12f;
-    public Transform aimPivot;              //    ǹ()
-    public bool rotateWeaponToAim = false;  //  ī޶  
-    public float yawBiasOnAim = 10f;        //   þ ̾(+Y)
+    [Header("Aim Turning (Yaw)")]
+    public Transform playerRoot;
+    public float aimTurnSpeed = 15f; // 현재는 안 쓰지만 남겨둠
 
     [Header("Upper Body Pitch - Bone Chain")]
-    public Transform hipsBone;              // mixamorig:Hips
-    public Transform spine1Bone;            // mixamorig:Spine1 ( ֵ )
-    public Transform chestBone;             // mixamorig:Spine2 / UpperChest
+    public Transform hipsBone;
+    public Transform spine1Bone;
+    public Transform chestBone;
 
-    //   ȸ Ѱ(/Ʒ)
     public float hipsUpLimit = 10f, hipsDownLimit = 15f;
     public float spine1UpLimit = 20f, spine1DownLimit = 25f;
     public float chestUpLimit = 35f, chestDownLimit = 45f;
 
-    // (+)/Ʒ(-)   ġ
     public float hipsWeightUp = 0.15f, hipsWeightDown = 0.35f;
     public float spine1WeightUp = 0.35f, spine1WeightDown = 0.50f;
     public float chestWeightUp = 0.60f, chestWeightDown = 0.85f;
 
-    public float bonePitchLerp = 12f;       //   ӵ
+    public float bonePitchLerp = 12f;
 
-    [Header("Fine-Tune (optional)")]
-    public float pivotMaxYaw = 8f;
-    public float pivotMaxPitch = 8f;
+    [Header("Pivot Fine-Tune")]
+    public Transform aimPivot;
+    public bool rotateWeaponToAim = true;
+    public float pivotMaxYaw = 30f;
+    public float pivotMaxPitch = 30f;
     public float pivotLerp = 15f;
 
     [Header("Controls")]
@@ -53,20 +51,15 @@ public class PlayerWeaponController : MonoBehaviour
     public string paramIsFiring = "isFiring";
     public string paramIsAiming = "isAiming";
 
-    [Header("Aim Solve")]
-    public LayerMask aimMask = ~0;
-    public float minAimDistance = 3f;
+    bool isAiming = false;
+    public bool IsAiming => isAiming;
 
-    //  
     int rifleLayerIndex = -1;
     float rifleLayerTargetWeight = 0f;
     float rifleLayerCurrentWeight = 0f;
 
-    bool isAiming = false;
-    public bool IsAiming => isAiming;   // ٸ ũƮ(: RigWeightDriver) 
-
     Quaternion hipsDefault, spine1Default, chestDefault, pivotDefault;
-    bool _ikTicked; // ش ӿ OnAnimatorIK ȣƴ
+    bool _ikTicked;
 
     void Awake()
     {
@@ -78,17 +71,12 @@ public class PlayerWeaponController : MonoBehaviour
         {
             animator.applyRootMotion = false;
             rifleLayerIndex = animator.GetLayerIndex(rifleLayerName);
-            if (rifleLayerIndex < 0)
-                Debug.LogWarning($"Animator '{rifleLayerName}' ̾ ϴ. (Layers ǿ ߰)");
-            // Animator  ⺻̸ OK. (ʿ Culling: Always Animate)
         }
 
         if (hipsBone) hipsDefault = hipsBone.localRotation;
         if (spine1Bone) spine1Default = spine1Bone.localRotation;
         if (chestBone) chestDefault = chestBone.localRotation;
         if (aimPivot) pivotDefault = aimPivot.localRotation;
-
-        if (chestBone && playerRoot && chestBone == playerRoot) chestBone = null;
     }
 
     void Start()
@@ -104,7 +92,6 @@ public class PlayerWeaponController : MonoBehaviour
         ApplyLayerWeight();
     }
 
-    // --- B ٽ: IK  ⼭ ó,   LateUpdate    ó ---
     void OnAnimatorIK(int layerIndex)
     {
         _ikTicked = true;
@@ -114,13 +101,59 @@ public class PlayerWeaponController : MonoBehaviour
     void LateUpdate()
     {
         if (!_ikTicked) ApplyAimPose();
-        _ikTicked = false; //   ʱȭ
+        _ikTicked = false;
     }
 
-    //  Yaw, ü Pitch й, ǹ    Լ 
+    void HandleWeaponSwitch()
+    {
+        if (Input.GetKeyDown(unarmedKey)) rifleLayerTargetWeight = 0f;
+        if (Input.GetKeyDown(rifleKey)) rifleLayerTargetWeight = 1f;
+    }
+
+    void HandleAim()
+    {
+        bool wantAim = Input.GetKey(aimKey) && currentWeapon != null;
+
+        if (wantAim != isAiming)
+        {
+            isAiming = wantAim;
+            animator?.SetBool(paramIsAiming, isAiming);
+            cameraController?.SetAiming(isAiming);
+            if (weaponRoot) weaponRoot.SetActive(isAiming);
+            if (!isAiming) animator?.SetBool(paramIsFiring, false);
+        }
+    }
+
+    void HandleFire()
+    {
+        if (!currentWeapon) return;
+
+        bool wantFire = Input.GetKey(fireKey) && isAiming;
+        animator?.SetBool(paramIsFiring, wantFire);
+
+        if (wantFire && currentWeapon.CanFire)
+        {
+            currentWeapon.Fire(cameraTransform, isAiming);
+        }
+    }
+
+    void ApplyLayerWeight()
+    {
+        if (rifleLayerIndex < 0 || animator == null) return;
+
+        float target = isAiming ? 1f : rifleLayerTargetWeight;
+        rifleLayerCurrentWeight = Mathf.Lerp(
+            rifleLayerCurrentWeight,
+            target,
+            Time.deltaTime * layerChangeSpeed
+        );
+
+        animator.SetLayerWeight(rifleLayerIndex, rifleLayerCurrentWeight);
+    }
+
     void ApplyAimPose()
     {
-        //  ƴ   ڼ 
+        // 조준 중이 아니면 기본 자세로 되돌림
         if (!isAiming)
         {
             LerpBack(hipsBone, hipsDefault);
@@ -131,58 +164,52 @@ public class PlayerWeaponController : MonoBehaviour
             return;
         }
 
-        // (1) (Yaw): ī޶ Yaw +  ̾
+        // (1) 캐릭터 루트를 카메라 Yaw와 동기화
         if (playerRoot && cameraTransform)
         {
-            Vector3 fwd = cameraTransform.forward; fwd.y = 0f;
+            Vector3 fwd = cameraTransform.forward;
+            fwd.y = 0f;
             if (fwd.sqrMagnitude > 0.0001f)
             {
                 Quaternion camYaw = Quaternion.LookRotation(fwd);
-                Quaternion bias = Quaternion.Euler(0f, yawBiasOnAim, 0f);
-                Quaternion target = camYaw * bias;
-                playerRoot.rotation = Quaternion.Slerp(playerRoot.rotation, target, Time.deltaTime * aimTurnSpeed);
+                playerRoot.rotation = camYaw;
             }
         }
 
-        // (2) ü Pitch  üο й
+        // (2) 상체 Pitch 보정
         if (cameraTransform)
         {
-            float camPitch = GetCameraPitchDeg(cameraTransform.forward); //  + / Ʒ -
+            float camPitch = GetCameraPitchDeg(cameraTransform.forward);
             ApplyPitchChain(camPitch);
         }
 
-        // (3)  ǹ(ɼ)
-        if (aimPivot)
+        // (3) 무기 pivot 회전 보정
+        if (aimPivot && rotateWeaponToAim)
         {
-            if (!rotateWeaponToAim)
-            {
-                aimPivot.localRotation = Quaternion.Slerp(aimPivot.localRotation, pivotDefault, Time.deltaTime * pivotLerp);
-            }
-            else
-            {
-                Transform p = aimPivot.parent ? aimPivot.parent : aimPivot;
-                Quaternion worldTarget = Quaternion.LookRotation(cameraTransform.forward, Vector3.up);
-                Quaternion localTarget = Quaternion.Inverse(p.rotation) * worldTarget;
+            Transform p = aimPivot.parent ? aimPivot.parent : aimPivot;
+            Quaternion worldTarget = Quaternion.LookRotation(cameraTransform.forward, Vector3.up);
+            Quaternion localTarget = Quaternion.Inverse(p.rotation) * worldTarget;
 
-                Quaternion delta = Quaternion.Inverse(pivotDefault) * localTarget;
-                Vector3 e = NormalizeEuler(delta.eulerAngles);
-                e.x = Mathf.Clamp(e.x, -pivotMaxPitch, pivotMaxPitch);
-                e.y = Mathf.Clamp(e.y, -pivotMaxYaw, pivotMaxYaw);
-                e.z = 0f;
+            Quaternion delta = Quaternion.Inverse(pivotDefault) * localTarget;
+            Vector3 e = NormalizeEuler(delta.eulerAngles);
+            e.x = Mathf.Clamp(e.x, -pivotMaxPitch, pivotMaxPitch);
+            e.y = Mathf.Clamp(e.y, -pivotMaxYaw, pivotMaxYaw);
+            e.z = 0f;
 
-                Quaternion finalLocal = Quaternion.Slerp(
-                    aimPivot.localRotation,
-                    pivotDefault * Quaternion.Euler(e),
-                    Time.deltaTime * pivotLerp);
+            Quaternion finalLocal = Quaternion.Slerp(
+                aimPivot.localRotation,
+                pivotDefault * Quaternion.Euler(e),
+                Time.deltaTime * pivotLerp
+            );
 
-                aimPivot.localRotation = finalLocal;
-            }
+            aimPivot.localRotation = finalLocal;
         }
+
+        // (4) 총구를 카메라 중앙에 강제로 맞추는 로직은 없음(제어는 pivot에서).
     }
 
     void ApplyPitchChain(float pitchDeg)
     {
-        // (+)/Ʒ(-)      ٸ
         float hipsW = (pitchDeg >= 0f) ? hipsWeightUp : hipsWeightDown;
         float spine1W = (pitchDeg >= 0f) ? spine1WeightUp : spine1WeightDown;
         float chestW = (pitchDeg >= 0f) ? chestWeightUp : chestWeightDown;
@@ -228,54 +255,5 @@ public class PlayerWeaponController : MonoBehaviour
     {
         camForward.Normalize();
         return Mathf.Asin(Mathf.Clamp(camForward.y, -1f, 1f)) * Mathf.Rad2Deg;
-    }
-
-    // ---------- Է/ִϸ ----------
-
-    void HandleWeaponSwitch()
-    {
-        if (Input.GetKeyDown(unarmedKey)) rifleLayerTargetWeight = 0f;
-        if (Input.GetKeyDown(rifleKey)) rifleLayerTargetWeight = 1f;
-    }
-
-    void HandleAim()
-    {
-        bool wantAim = Input.GetKey(aimKey) && currentWeapon != null;
-
-        if (wantAim != isAiming)
-        {
-            isAiming = wantAim;
-            animator?.SetBool(paramIsAiming, isAiming);
-            cameraController?.SetAiming(isAiming);
-            if (weaponRoot) weaponRoot.SetActive(isAiming);
-            if (!isAiming) animator?.SetBool(paramIsFiring, false);
-        }
-    }
-
-    void HandleFire()
-    {
-        if (!currentWeapon) return;
-
-        bool wantFire = Input.GetKey(fireKey) && isAiming; //  ߿ ߻
-        animator?.SetBool(paramIsFiring, wantFire);
-
-        if (wantFire && currentWeapon.CanFire)
-        {
-            currentWeapon.Fire(cameraTransform, isAiming);
-        }
-    }
-
-    void ApplyLayerWeight()
-    {
-        if (rifleLayerIndex < 0) return;
-
-        float target = isAiming ? 1f : rifleLayerTargetWeight;
-        rifleLayerCurrentWeight = Mathf.Lerp(
-            rifleLayerCurrentWeight,
-            target,
-            Time.deltaTime * layerChangeSpeed
-        );
-
-        animator.SetLayerWeight(rifleLayerIndex, rifleLayerCurrentWeight);
     }
 }
