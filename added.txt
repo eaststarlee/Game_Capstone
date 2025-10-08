@@ -1,0 +1,11 @@
+Assets/Paint_Gun.fbx
+Assets/Paint_Gun.fbx.meta
+Assets/Prefabs/Materials.meta
+Assets/Prefabs/Materials/Glass_MAT.mat
+Assets/Prefabs/Materials/Glass_MAT.mat.meta
+Assets/Prefabs/Materials/Main_MAT.mat
+Assets/Prefabs/Materials/Main_MAT.mat.meta
+Assets/Prefabs/Materials/StingrayPBS3.mat
+Assets/Prefabs/Materials/StingrayPBS3.mat.meta
+Assets/Prefabs/Paint_Gun.prefab
+Assets/Prefabs/Paint_Gun.prefab.meta
