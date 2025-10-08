@@ -838,6 +838,11 @@ MonoBehaviour:
   muzzleFlash: {fileID: 0}
   audioSource: {fileID: 0}
   fireSfx: {fileID: 0}
+--- !u!4 &582965392 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4436805663696350335, guid: 0c079f8e89a99464e9710a44b3ae07e5, type: 3}
+  m_PrefabInstance: {fileID: 1595994447}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &643498909 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0c079f8e89a99464e9710a44b3ae07e5, type: 3}
@@ -856,7 +861,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 6626424bbecc99045b3bb21e4a276e90, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -934,6 +939,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80bf08f11f6210045a0d269534de515e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animator: {fileID: 643498910}
+  cameraTransform: {fileID: 330585546}
+  cameraController: {fileID: 330585548}
+  currentWeapon: {fileID: 547709591}
+  weaponRoot: {fileID: 821297008}
+  playerRoot: {fileID: 582965392}
+  aimTurnSpeed: 12
+  yawBiasOnAim: 10
+  hipsBone: {fileID: 0}
+  spine1Bone: {fileID: 0}
+  chestBone: {fileID: 0}
+  hipsUpLimit: 10
+  hipsDownLimit: 15
+  spine1UpLimit: 20
+  spine1DownLimit: 25
+  chestUpLimit: 35
+  chestDownLimit: 45
+  hipsWeightUp: 0.15
+  hipsWeightDown: 0.35
+  spine1WeightUp: 0.35
+  spine1WeightDown: 0.5
+  chestWeightUp: 0.6
+  chestWeightDown: 0.85
+  bonePitchLerp: 12
+  aimPivot: {fileID: 179493990}
+  rotateWeaponToAim: 0
+  pivotMaxYaw: 8
+  pivotMaxPitch: 8
+  pivotLerp: 15
+  unarmedKey: 49
+  rifleKey: 50
+  aimKey: 324
+  fireKey: 323
+  rifleLayerName: Rifle Layer
+  layerChangeSpeed: 10
+  paramIsFiring: isFiring
+  paramIsAiming: isAiming
+  aimMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minAimDistance: 3
 --- !u!114 &643498915
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -976,47 +1022,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8641b2f3416bd4a42bbc337ea4e1b001, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 643498910}
-  cameraTransform: {fileID: 330585546}
-  cameraController: {fileID: 330585548}
-  currentWeapon: {fileID: 547709591}
-  weaponRoot: {fileID: 547709589}
-  playerRoot: {fileID: 643498913}
-  aimTurnSpeed: 12
-  yawBiasOnAim: 10
-  hipsBone: {fileID: 1697182608}
-  spine1Bone: {fileID: 867119967}
-  chestBone: {fileID: 1931223039}
-  hipsUpLimit: 10
-  hipsDownLimit: 15
-  spine1UpLimit: 20
-  spine1DownLimit: 25
-  chestUpLimit: 35
-  chestDownLimit: 45
-  hipsWeightUp: 0.15
-  hipsWeightDown: 0.35
-  spine1WeightUp: 0.35
-  spine1WeightDown: 0.5
-  chestWeightUp: 0.6
-  chestWeightDown: 0.85
-  bonePitchLerp: 12
-  aimPivot: {fileID: 179493990}
-  rotateWeaponToAim: 0
-  pivotMaxYaw: 8
-  pivotMaxPitch: 8
-  pivotLerp: 15
-  unarmedKey: 49
-  rifleKey: 50
-  aimKey: 324
-  fireKey: 323
-  rifleLayerName: Rifle Layer
-  layerChangeSpeed: 10
-  paramIsFiring: isFiring
-  paramIsAiming: isAiming
-  aimMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  minAimDistance: 3
 --- !u!1 &813859903
 GameObject:
   m_ObjectHideFlags: 0
@@ -1129,11 +1134,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &867119967 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1846256759547140760, guid: 0c079f8e89a99464e9710a44b3ae07e5, type: 3}
-  m_PrefabInstance: {fileID: 1595994447}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1073315052
 GameObject:
   m_ObjectHideFlags: 0
@@ -1445,11 +1445,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 643498916}
   m_SourcePrefab: {fileID: 100100000, guid: 0c079f8e89a99464e9710a44b3ae07e5, type: 3}
---- !u!4 &1697182608 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -2707054796494011859, guid: 0c079f8e89a99464e9710a44b3ae07e5, type: 3}
-  m_PrefabInstance: {fileID: 1595994447}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1711971099
 GameObject:
   m_ObjectHideFlags: 0
@@ -1542,11 +1537,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1711971099}
   m_CullTransparentMesh: 1
---- !u!4 &1931223039 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8013909246233647550, guid: 0c079f8e89a99464e9710a44b3ae07e5, type: 3}
-  m_PrefabInstance: {fileID: 1595994447}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
