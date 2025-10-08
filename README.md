@@ -1,2 +1,0 @@
-# Game_Capstone
-Capstone
