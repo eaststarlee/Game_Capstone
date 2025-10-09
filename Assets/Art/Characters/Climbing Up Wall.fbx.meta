@@ -497,23 +497,23 @@ ModelImporter:
         length: 0
         modified: 0
     skeleton:
-    - name: X Bot@Idle(Clone)
+    - name: Idle(Clone)
       parentName: 
       position: {x: 0, y: 0, z: 0}
       rotation: {x: 0, y: 0, z: 0, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: Beta_Surface
-      parentName: X Bot@Idle(Clone)
+      parentName: Idle(Clone)
       position: {x: -0, y: 0, z: 0}
       rotation: {x: 0, y: -0, z: -0, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: Beta_Joints
-      parentName: X Bot@Idle(Clone)
+      parentName: Idle(Clone)
       position: {x: -0, y: 0, z: 0}
       rotation: {x: 0, y: -0, z: -0, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: mixamorig:Hips
-      parentName: X Bot@Idle(Clone)
+      parentName: Idle(Clone)
       position: {x: -0.0014418326, y: 1.0719984, z: 0.01422837}
       rotation: {x: 0.0064583654, y: -0.00000000448334, z: -0.0000002435388, w: 0.99997914}
       scale: {x: 1, y: 1, z: 1.0000004}

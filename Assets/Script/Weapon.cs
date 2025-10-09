@@ -12,15 +12,12 @@ public class Weapon : MonoBehaviour
     public float aimSpread = 0.5f;        // 조준 분산(도)
     public float maxRayDistance = 500f;   // 조준 레이 최대 거리
     public float minAimDistance = 3f;     // 너무 가까운 히트 보정
-    public LayerMask hitMask = ~0;        // 조준/피격 레이어
+    public LayerMask hitMask = ~0;        // 조준/피격 레이어(플레이어/무기/UI 제외)
 
     [Header("VFX/SFX (optional)")]
     public ParticleSystem muzzleFlash;
     public AudioSource audioSource;
     public AudioClip fireSfx;
-
-    [Header("Debug")]
-    public bool fireFromMuzzleForward = false; // ON: 총구 Z+ 기준, OFF: 카메라 십자선 기준
 
     float nextFireTime = 0f;
     public bool CanFire => Time.time >= nextFireTime;
@@ -28,24 +25,15 @@ public class Weapon : MonoBehaviour
     public void Fire(Transform cameraTf, bool isAiming)
     {
         if (!CanFire || !muzzle || !bulletPrefab) return;
-
         nextFireTime = Time.time + 1f / Mathf.Max(0.0001f, fireRate);
 
-        // 발사 방향 계산
-        Vector3 dir;
-        if (fireFromMuzzleForward)
-        {
-            // TPS 리얼: 총구 로컬 Z+로 발사
-            dir = muzzle.forward;
-        }
-        else
-        {
-            // FPS식: 카메라 중앙 레이캐스트 → aimPoint 향해 발사
-            Vector3 aimPoint = GetAimPointFromCamera(cameraTf);
-            dir = (aimPoint - muzzle.position).normalized;
-        }
+        // 1) 화면 중앙 조준점(카메라 레이 기준)
+        Vector3 aimPoint = GetAimPointFromCamera(cameraTf);
 
-        // 분산 적용
+        // 2) 총구 -> 조준점 방향
+        Vector3 dir = (aimPoint - muzzle.position).normalized;
+
+        // 3) 분산(원뿔)
         float spread = Mathf.Max(0f, isAiming ? aimSpread : hipSpread);
         if (spread > 0.0001f)
         {
@@ -54,16 +42,13 @@ public class Weapon : MonoBehaviour
                 * dir;
         }
 
-        // 탄 생성 + 초기 회전/속도
+        // 4) 탄 생성 + 속도 부여
         Bullet b = Instantiate(bulletPrefab, muzzle.position, Quaternion.LookRotation(dir));
-        b.Fire(dir);
+        b.Fire(dir); // ← 반드시 호출
 
-        // 효과
+        // 5) 효과
         if (muzzleFlash) muzzleFlash.Play();
         if (audioSource && fireSfx) audioSource.PlayOneShot(fireSfx);
-
-        // 디버그 레이(2초 유지)
-        Debug.DrawRay(muzzle.position, dir * 5f, Color.cyan, 2f);
     }
 
     Vector3 GetAimPointFromCamera(Transform camTf)
@@ -76,19 +61,10 @@ public class Weapon : MonoBehaviour
                 return (hit.distance < minAimDistance) ? ray.GetPoint(minAimDistance) : hit.point;
             return ray.GetPoint(maxRayDistance);
         }
-
-        // Camera.main이 없을 때 백업
+        // 백업
         Ray r2 = new Ray(camTf.position, camTf.forward);
         if (Physics.Raycast(r2, out RaycastHit h2, maxRayDistance, hitMask, QueryTriggerInteraction.Ignore))
             return h2.point;
         return r2.GetPoint(maxRayDistance);
-    }
-
-    // ★ 요청한 Gizmo: 씬/플레이 중 선택했을 때 총구 Z+ 시각화
-    void OnDrawGizmosSelected()
-    {
-        if (!muzzle) return;
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(muzzle.position, muzzle.position + muzzle.forward * 0.6f);
     }
 }

@@ -1,0 +1,7 @@
+Assets/Scenes/SampleScene.unity
+Assets/Script/CameraController.cs
+Assets/Script/PlayerWeaponController.cs
+Assets/Script/Weapon.cs
+Assets/Script/WeaponSocketBinder.cs
+Assets/Settings/PC_Renderer.asset
+ProjectSettings/ProjectSettings.asset

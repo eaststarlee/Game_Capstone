@@ -1,2 +1,1 @@
-# Game_Capstone
-Capstone
+git merge origin/JH  --allow-unrelated-histories
