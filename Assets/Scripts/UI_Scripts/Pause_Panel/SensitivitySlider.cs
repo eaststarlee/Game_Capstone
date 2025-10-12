@@ -48,27 +48,26 @@ public class SensitivitySlider : MonoBehaviour
         int step = Mathf.RoundToInt(sliderValue);
         float sensitivity;
 
-        if (step <= 5)
+        switch (step)
         {
-            // step1~5: 기존 Lerp 공식 유지
-            float t = (step - 1) / 4f;  // 0~1
-            sensitivity = baseSensitivity * Mathf.Lerp(0.6f, 1.0f, t);
-            sensitivity *= sensitivityMultiplier;
-        }
-        else
-        {
-            // step6~10: 강제값 적용
-            switch (step)
-            {
-                case 6: sensitivity = 150f; break;
-                case 7: sensitivity = 250f; break;
-                case 8: sensitivity = 350f; break;
-                case 9: sensitivity = 450f; break;
-                case 10: sensitivity = 550f; break;
-                default: sensitivity = 250f; break; // 안전용
-            }
+            // 1~5 단계 강제값
+            case 1: sensitivity = 5f; break;
+            case 2: sensitivity = 10f; break;
+            case 3: sensitivity = 25f; break;
+            case 4: sensitivity = 50f; break;
+            case 5: sensitivity = 100f; break;
+
+            // 6~10 단계 기존 값 유지
+            case 6: sensitivity = 150f; break;
+            case 7: sensitivity = 250f; break;
+            case 8: sensitivity = 350f; break;
+            case 9: sensitivity = 450f; break;
+            case 10: sensitivity = 550f; break;
+
+            default: sensitivity = 100f; break; // 안전용
         }
 
         return sensitivity;
     }
+
 }
