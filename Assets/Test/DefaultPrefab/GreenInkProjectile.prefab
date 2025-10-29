@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 2014487676730146142}
   - component: {fileID: 8306086399739924296}
   m_Layer: 0
-  m_Name: InkProjectile
+  m_Name: GreenInkProjectile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -123,8 +123,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38e1dbdeb3edcb44ab71a400b21ac5ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inkDecalObjectPrefab: {fileID: 976191768361698509, guid: eb74241625624d44da316c5903dbe470, type: 3}
-  LifeTime: 5
+  inkDecalObjectPrefab: {fileID: 976191768361698509, guid: cb2ca71038ab8f147aa956bef42b4842, type: 3}
+  lifeTime: 20
+  prefabColor: {r: 0, g: 1, b: 0.70051455, a: 0}
 --- !u!54 &2014487676730146142
 Rigidbody:
   m_ObjectHideFlags: 0

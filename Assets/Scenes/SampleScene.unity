@@ -951,7 +951,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9207d13f39b5754cbc81e779946bb1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletPrefab: {fileID: 1628404613210267078, guid: 657f7972f5f8de1468f1772adb3bac49, type: 3}
+  bulletPrefab: {fileID: 1628404613210267078, guid: e0d1fefd13b0193418a701e3a3c14d2b, type: 3}
   muzzlePoint: {fileID: 2078059857}
   playerCamera: {fileID: 330585545}
   fireRate: 4

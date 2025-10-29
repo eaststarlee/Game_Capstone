@@ -1,9 +1,11 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class InkProjectileController : MonoBehaviour
 {
     [SerializeField] private GameObject inkDecalObjectPrefab;
-    [SerializeField] private float LifeTime = 5.0f;
+    [SerializeField] private float lifeTime = 5.0f;
+    [SerializeField] private Color prefabColor;
 
     private Rigidbody rigidBodyComp;
     private Vector3 dir;
@@ -11,6 +13,8 @@ public class InkProjectileController : MonoBehaviour
     void Start()
     {
         rigidBodyComp = GetComponent<Rigidbody>();
+        gameObject.GetComponent<Renderer>().material.color = prefabColor;
+        inkDecalObjectPrefab.GetComponent<DecalProjector>().material.color= prefabColor;
     }
 
     void Update()
@@ -25,7 +29,7 @@ public class InkProjectileController : MonoBehaviour
         Instance.transform.SetPositionAndRotation(collision.GetContact(0).point + collision.GetContact(0).normal * 0.1f, Quaternion.LookRotation(dir));
         
 
-        Destroy(Instance, LifeTime);
+        Destroy(Instance, lifeTime);
         Destroy(gameObject);
     }
 }
