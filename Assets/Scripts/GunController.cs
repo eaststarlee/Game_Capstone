@@ -59,12 +59,34 @@ public class GunController : MonoBehaviour
     {
         if (playerInventory == null) return;
         var selectedSlot = playerInventory.GetSelectedSlot();
-        if (selectedSlot == null || !selectedSlot.HasItem)
+
+        // 기본 muzzle & bullet 설정
+        GameObject muzzleToUse = defaultMuzzlePrefab;
+        GameObject bulletToUse = defaultBulletPrefab;
+
+        // 슬롯이 있고 아이템이 있을 때만 매핑 적용
+        if (selectedSlot != null && selectedSlot.HasItem)
         {
-            Debug.Log("선택된 슬롯이 비어있습니다! 발사 불가.");
-            return;
+            foreach (var mapping in itemGunMappings)
+            {
+                if (mapping.itemName == selectedSlot.itemName)
+                {
+                    if (mapping.muzzlePrefab != null)
+                        muzzleToUse = mapping.muzzlePrefab;
+
+                    if (mapping.bulletPrefab != null)
+                        bulletToUse = mapping.bulletPrefab;
+
+                    break;
+                }
+            }
+        }
+        else
+        {
+            Debug.Log("선택된 슬롯이 비어있거나 없음. 기본 총알 발사!");
         }
 
+        // 발사 위치 & 타겟 계산
         Vector3 spawnPos = playerCamera.transform.position + playerCamera.transform.forward * spawnDistance;
         Vector3 targetPoint;
 
@@ -77,24 +99,6 @@ public class GunController : MonoBehaviour
         else
         {
             targetPoint = spawnPos + playerCamera.transform.forward * 1000f;
-        }
-
-        // 아이템별 머즐 & 총알 결정
-        GameObject muzzleToUse = defaultMuzzlePrefab;
-        GameObject bulletToUse = defaultBulletPrefab;
-
-        foreach (var mapping in itemGunMappings)
-        {
-            if (mapping.itemName == selectedSlot.itemName)
-            {
-                if (mapping.muzzlePrefab != null)
-                    muzzleToUse = mapping.muzzlePrefab;
-
-                if (mapping.bulletPrefab != null)
-                    bulletToUse = mapping.bulletPrefab;
-
-                break;
-            }
         }
 
         // Bullet 생성
