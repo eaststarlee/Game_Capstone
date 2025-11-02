@@ -16,6 +16,7 @@ public class CircularInventoryUI : MonoBehaviour
 
     private List<Image> slotImages = new List<Image>();
     private List<Image> slotBorders = new List<Image>();
+    private List<Sprite> slotDefaultIcons = new List<Sprite>(); // 각 슬롯의 기본 아이콘
 
     [Header("Debug Text")]
     public Text selectedSlotText;
@@ -38,23 +39,30 @@ public class CircularInventoryUI : MonoBehaviour
             new ItemVisual() { itemName = "GREEN", color = Color.green },
             new ItemVisual() { itemName = "BLUE", color = Color.blue },
             new ItemVisual() { itemName = "DARKBLUE", color = new Color(0f, 0f, 0.5f) },
-            new ItemVisual() { itemName = "PURPLE", color = new Color(0.5f, 0f, 0.5f) }
+            new ItemVisual() { itemName = "PURPLE", color = new Color(0.5f, 0f, 0.5f) },
+            new ItemVisual() { itemName = "BLACK", color = Color.black }
         };
 
         GenerateSlots();
         RefreshUI();
+
+        // Inventory 이벤트 구독
+        if (inventory != null)
+        {
+            inventory.OnInventoryChanged += RefreshUI;
+        }
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            inventory.SelectSlot(inventory.selectedIndex - 1);
+            inventory.PrevSlot();
             RefreshUI();
         }
         else if (Input.GetKeyDown(KeyCode.E))
         {
-            inventory.SelectSlot(inventory.selectedIndex + 1);
+            inventory.NextSlot();
             RefreshUI();
         }
     }
@@ -77,7 +85,10 @@ public class CircularInventoryUI : MonoBehaviour
             // 루트 Image 가져오기
             Image img = slot.GetComponent<Image>();
             if (img != null)
+            {
                 slotImages.Add(img);
+                slotDefaultIcons.Add(img.sprite); // 기본 아이콘 저장
+            }
 
             // Border 가져오기
             Image border = slot.transform.Find("Border")?.GetComponent<Image>();
@@ -94,22 +105,31 @@ public class CircularInventoryUI : MonoBehaviour
         for (int i = 0; i < slotCount; i++)
         {
             InventorySlot slot = inventory.slots[i];
-
             Image img = slotImages[i];
 
-            // 수량이 0이거나 슬롯이 비었으면 흰색
-            if (slot == null || slot.IsEmpty || slot.amount <= 0)
+            if (slot == null || !slot.HasItem)
             {
+                // 빈 슬롯이면 기본 아이콘 유지
+                img.sprite = slotDefaultIcons[i];
                 img.color = Color.white;
             }
             else
             {
-                // 아이템 이름에 해당하는 색상 찾기
-                ItemVisual visual = itemVisuals.Find(v => v.itemName == slot.itemName);
-                img.color = visual != null ? visual.color : Color.white;
+                // 아이콘이 있으면 적용
+                if (slot.itemIcon != null)
+                {
+                    img.sprite = slot.itemIcon;
+                    img.color = Color.white; // 색상 초기화
+                }
+                else
+                {
+                    img.sprite = slotDefaultIcons[i];
+                    ItemVisual visual = itemVisuals.Find(v => v.itemName == slot.itemName);
+                    img.color = visual != null ? visual.color : Color.white;
+                }
             }
 
-            // Border는 선택 여부에 따라 표시
+            // Border 표시
             if (slotBorders[i] != null)
             {
                 slotBorders[i].enabled = (i == inventory.selectedIndex);
@@ -120,6 +140,4 @@ public class CircularInventoryUI : MonoBehaviour
         if (selectedSlotText != null)
             selectedSlotText.text = "" + (inventory.selectedIndex + 1);
     }
-
-
 }

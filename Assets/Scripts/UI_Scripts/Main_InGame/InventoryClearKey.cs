@@ -12,13 +12,12 @@ public class InventoryClearKey : MonoBehaviour
         {
             InventorySlot selectedSlot = inventory.GetSelectedSlot();
 
-            if (selectedSlot != null)
+            if (selectedSlot != null && selectedSlot.HasItem)
             {
-                selectedSlot.amount = 0;     // 슬롯 수량 0으로 초기화
-                selectedSlot.itemName = "";  // 아이템 이름 초기화
+                selectedSlot.Clear();  // 슬롯 비우기
                 Debug.Log("선택된 슬롯이 비워졌습니다.");
 
-                // 바로 UI 갱신
+                // UI 바로 갱신
                 if (circularInventoryUI != null)
                     circularInventoryUI.RefreshUI();
             }
