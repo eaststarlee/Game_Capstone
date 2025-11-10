@@ -293,16 +293,16 @@ MonoBehaviour:
   itemGunMappings:
   - itemName: RED
     muzzlePrefab: {fileID: 1336949550903370, guid: f6d4f094d16eee54b84c391b7ae82b0e, type: 3}
-    bulletPrefab: {fileID: 1628404613210267078, guid: 657f7972f5f8de1468f1772adb3bac49, type: 3}
+    bulletPrefab: {fileID: 1628404613210267078, guid: 6a78d7c04b0ff7b4da54c4e235dc7b02, type: 3}
   - itemName: YELLOW
     muzzlePrefab: {fileID: 1336949550903370, guid: 9ac65a856d99d03499fa267fdeeb2544, type: 3}
-    bulletPrefab: {fileID: 1628404613210267078, guid: 657f7972f5f8de1468f1772adb3bac49, type: 3}
+    bulletPrefab: {fileID: 1628404613210267078, guid: e0d1fefd13b0193418a701e3a3c14d2b, type: 3}
   - itemName: BLUE
     muzzlePrefab: {fileID: 1336949550903370, guid: 1c2d1e2c8e92d6b4fa7065198ab7a55d, type: 3}
-    bulletPrefab: {fileID: 1628404613210267078, guid: 657f7972f5f8de1468f1772adb3bac49, type: 3}
+    bulletPrefab: {fileID: 1628404613210267078, guid: 7e01a9f9e930e334d991af423a92ed0b, type: 3}
   - itemName: BLACK
     muzzlePrefab: {fileID: 1336949550903370, guid: 9765c8965c61b6d4a966d668838c0edc, type: 3}
-    bulletPrefab: {fileID: 1628404613210267078, guid: 657f7972f5f8de1468f1772adb3bac49, type: 3}
+    bulletPrefab: {fileID: 1628404613210267078, guid: 171ba7be3242a494482f2b483cf19780, type: 3}
 --- !u!4 &174861923 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b9e520b63a6698e4aacf73fc8ee9a40e, type: 3}

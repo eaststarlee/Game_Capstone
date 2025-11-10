@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8458316663661428410}
   - component: {fileID: 7757224577259579762}
   m_Layer: 0
-  m_Name: GreenInkDecalObject
+  m_Name: BlueInkDecalObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 2100000, guid: d32fab66d5a4ffa478e1520cc79399b9, type: 2}
+  m_Material: {fileID: 2100000, guid: b4103c2200ebe08459ff34dd576ad14a, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
   m_StartAngleFade: 180
