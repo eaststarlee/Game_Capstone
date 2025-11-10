@@ -859,7 +859,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 63
+    m_Bits: 319
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1431,7 +1431,7 @@ GameObject:
   - component: {fileID: 1966425220}
   - component: {fileID: 1966425219}
   - component: {fileID: 1966425218}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -1478,9 +1478,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 5
+  surfaceSpeedMultiplier: 1
   gravity: -9.81
-  mouseSensitivity: 100
   jumpHeight: 1
+  mouseSensitivity: 100
   playerBody: {fileID: 1966425224}
   playerCamera: {fileID: 1530964383}
   groundCheck: {fileID: 22818372}

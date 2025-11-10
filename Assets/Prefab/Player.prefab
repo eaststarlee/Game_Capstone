@@ -183,7 +183,7 @@ GameObject:
   - component: {fileID: 7896545955513299090}
   - component: {fileID: 8761052326892032581}
   - component: {fileID: 512592400968975875}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -320,9 +320,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 5
+  surfaceSpeedMultiplier: 1
   gravity: -9.81
-  mouseSensitivity: 5
   jumpHeight: 1
+  mouseSensitivity: 5
   playerBody: {fileID: 338873044381693602}
   playerCamera: {fileID: 3167005812996792051}
   groundCheck: {fileID: 6978342544787903356}
@@ -331,6 +332,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   weaponSway: {fileID: 6034762832071390646}
+  inputEnabled: 1
 --- !u!1 &8141773984551553569
 GameObject:
   m_ObjectHideFlags: 0
@@ -435,7 +437,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 63
+    m_Bits: 319
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1007,10 +1009,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9207d13f39b5754cbc81e779946bb1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletPrefab: {fileID: 8067022175019834723, guid: 23717bee9acf15940af696b23147bfe1, type: 3}
-  muzzlePoint: {fileID: 970479824185250624}
+  defaultBulletPrefab: {fileID: 0}
   playerCamera: {fileID: 3167005812996792051}
   fireRate: 4
+  spawnDistance: 1
+  minTargetDistance: 2
+  defaultMuzzlePrefab: {fileID: 0}
+  muzzleTransform: {fileID: 0}
+  muzzleDuration: 0.5
+  audioSource: {fileID: 0}
+  fireSound: {fileID: 0}
+  itemGunMappings: []
 --- !u!4 &7521445601324992990 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b9e520b63a6698e4aacf73fc8ee9a40e, type: 3}

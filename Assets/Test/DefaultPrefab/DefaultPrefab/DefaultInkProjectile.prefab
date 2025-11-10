@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 2926267666181100643}
   - component: {fileID: 2014487676730146142}
   - component: {fileID: 8306086399739924296}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: DefaultInkProjectile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
