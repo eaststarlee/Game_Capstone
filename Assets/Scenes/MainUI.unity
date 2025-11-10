@@ -2282,54 +2282,13 @@ MonoBehaviour:
   inventory: {fileID: 1192928137}
   itemsUI:
   - itemName: RED
-    amountImages:
-    - {fileID: 1799917637}
-    - {fileID: 1505227}
-    - {fileID: 784346813}
-    - {fileID: 937537249}
-    - {fileID: 919132791}
-  - itemName: ORANGE
-    amountImages:
-    - {fileID: 1430883881}
-    - {fileID: 1236865580}
-    - {fileID: 1730620719}
-    - {fileID: 1158616192}
-    - {fileID: 258105812}
+    itemImage: {fileID: 919132791}
   - itemName: YELLOW
-    amountImages:
-    - {fileID: 1317205950}
-    - {fileID: 1389691014}
-    - {fileID: 1699349336}
-    - {fileID: 1255166286}
-    - {fileID: 393659074}
-  - itemName: GREEN
-    amountImages:
-    - {fileID: 18113485}
-    - {fileID: 343661445}
-    - {fileID: 2029267996}
-    - {fileID: 306754697}
-    - {fileID: 1715370121}
+    itemImage: {fileID: 393659074}
   - itemName: BLUE
-    amountImages:
-    - {fileID: 1513491482}
-    - {fileID: 1666378247}
-    - {fileID: 423202091}
-    - {fileID: 2074237148}
-    - {fileID: 82290514}
-  - itemName: DARKBLUE
-    amountImages:
-    - {fileID: 1717601062}
-    - {fileID: 2110803269}
-    - {fileID: 529939647}
-    - {fileID: 1525861532}
-    - {fileID: 1236947513}
-  - itemName: PURPLE
-    amountImages:
-    - {fileID: 1739870901}
-    - {fileID: 2084437208}
-    - {fileID: 1576815972}
-    - {fileID: 1984753506}
-    - {fileID: 1523071827}
+    itemImage: {fileID: 82290514}
+  - itemName: BLACK
+    itemImage: {fileID: 1523071827}
 --- !u!4 &350989842
 Transform:
   m_ObjectHideFlags: 0
@@ -8132,6 +8091,7 @@ GameObject:
   - component: {fileID: 1192928139}
   - component: {fileID: 1192928140}
   - component: {fileID: 1192928141}
+  - component: {fileID: 1192928142}
   m_Layer: 0
   m_Name: InventoryManager
   m_TagString: Untagged
@@ -8153,26 +8113,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slots:
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
   - itemName: 
-    amount: 0
-    amountSprites: []
+    itemIcon: {fileID: 0}
 --- !u!4 &1192928138
 Transform:
   m_ObjectHideFlags: 0
@@ -8238,6 +8191,27 @@ MonoBehaviour:
   clearKey: 99
   inventory: {fileID: 1192928137}
   circularInventoryUI: {fileID: 372254317}
+--- !u!114 &1192928142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192928136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3da2d71040cdc0748ab739237c58588b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  keyItems:
+  - key: 257
+    itemName: RED
+  - key: 258
+    itemName: YELLOW
+  - key: 259
+    itemName: BLUE
+  - key: 260
+    itemName: BLACK
 --- !u!1 &1209208169
 GameObject:
   m_ObjectHideFlags: 0
@@ -10267,7 +10241,7 @@ GameObject:
   - component: {fileID: 1523071828}
   - component: {fileID: 1523071827}
   m_Layer: 5
-  m_Name: PURPLE5
+  m_Name: BLACK5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10305,7 +10279,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.5019608, g: 0, b: 0.5019608, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -14240,10 +14214,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1542921236}
     m_Modifications:
-    - target: {fileID: 7430875240929101701, guid: 1afbdeea25505114bbb21c59871973ce, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 909327009, guid: 7a2a3b4d07fbc70409e4112fed4491e4, type: 3}
     - target: {fileID: 4843449486509249896, guid: 096da3429ff46fb4b8a4d37547c227db, type: 3}
       propertyPath: m_Name
       value: MainCircle
@@ -14344,6 +14314,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7430875240929101701, guid: 1afbdeea25505114bbb21c59871973ce, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 909327009, guid: 7a2a3b4d07fbc70409e4112fed4491e4, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

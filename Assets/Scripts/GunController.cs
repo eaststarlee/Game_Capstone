@@ -1,19 +1,44 @@
-
 using UnityEngine;
+
+[System.Serializable]
+public class ItemGunMapping
+{
+    public string itemName;
+    public GameObject muzzlePrefab;
+    public GameObject bulletPrefab; // 아이템별 총알 추가
+}
 
 public class GunController : MonoBehaviour
 {
-    [Header("References")]
-    public GameObject bulletPrefab;
-    public Transform muzzlePoint;
-    public Camera playerCamera;
+    [Header("Default Bullet Settings")]
+    public GameObject defaultBulletPrefab; // 기존 bulletPrefab 대신 기본 총알
 
-    [Header("Settings")]
-    public float fireRate = 0.5f;
+    [Header("Camera & Fire Settings")]
+    public Camera playerCamera;
+    public float fireRate = 5f;
     private float nextFireTime = 0f;
+    public float spawnDistance = 1f;
+    public float minTargetDistance = 2f;
+
+    [Header("Muzzle Flash Settings")]
+    public GameObject defaultMuzzlePrefab;
+    public Transform muzzleTransform;
+    public float muzzleDuration = 0.5f;
+
+    [Header("Sound Settings")]
+    public AudioSource audioSource;
+    public AudioClip fireSound;
+
+    [Header("Item -> Gun Mapping")]
+    public ItemGunMapping[] itemGunMappings;
+
+    private Inventory playerInventory;
 
     void Update()
     {
+        if (playerInventory == null)
+            FindInventory();
+
         if (Input.GetButton("Fire1") && Time.time >= nextFireTime)
         {
             nextFireTime = Time.time + 1f / fireRate;
@@ -21,30 +46,76 @@ public class GunController : MonoBehaviour
         }
     }
 
+    void FindInventory()
+    {
+        playerInventory = FindObjectOfType<Inventory>();
+        if (playerInventory != null)
+        {
+            Debug.Log("Inventory 참조 성공!");
+        }
+    }
+
     void Shoot()
     {
-        if (bulletPrefab == null || muzzlePoint == null || playerCamera == null)
-        {
-            Debug.LogError("GunController is not set up correctly!");
-            return;
-        }
+        if (playerInventory == null) return;
+        var selectedSlot = playerInventory.GetSelectedSlot();
 
-        // 1. Find the target point with a raycast from the center of the screen.
-        RaycastHit hit;
-        Vector3 targetPoint;
-        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out hit))
+        // 기본 muzzle & bullet 설정
+        GameObject muzzleToUse = defaultMuzzlePrefab;
+        GameObject bulletToUse = defaultBulletPrefab;
+
+        // 슬롯이 있고 아이템이 있을 때만 매핑 적용
+        if (selectedSlot != null && selectedSlot.HasItem)
         {
-            targetPoint = hit.point;
+            foreach (var mapping in itemGunMappings)
+            {
+                if (mapping.itemName == selectedSlot.itemName)
+                {
+                    if (mapping.muzzlePrefab != null)
+                        muzzleToUse = mapping.muzzlePrefab;
+
+                    if (mapping.bulletPrefab != null)
+                        bulletToUse = mapping.bulletPrefab;
+
+                    break;
+                }
+            }
         }
         else
         {
-            targetPoint = playerCamera.transform.position + playerCamera.transform.forward * 1000; // A point far away
+            Debug.Log("선택된 슬롯이 비어있거나 없음. 기본 총알 발사!");
         }
 
-        // 2. Instantiate the bullet at the muzzle point.
-        GameObject bullet = Instantiate(bulletPrefab, muzzlePoint.position, muzzlePoint.rotation);
+        // 발사 위치 & 타겟 계산
+        Vector3 spawnPos = playerCamera.transform.position + playerCamera.transform.forward * spawnDistance;
+        Vector3 targetPoint;
 
-        // 3. Make the bullet look at the target point.
+        if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward, out RaycastHit hit, 1000f))
+        {
+            targetPoint = hit.point;
+            if ((targetPoint - spawnPos).magnitude < minTargetDistance)
+                targetPoint = spawnPos + playerCamera.transform.forward * minTargetDistance;
+        }
+        else
+        {
+            targetPoint = spawnPos + playerCamera.transform.forward * 1000f;
+        }
+
+        // Bullet 생성
+        GameObject bullet = Instantiate(bulletToUse, spawnPos, Quaternion.identity);
         bullet.transform.LookAt(targetPoint);
+
+        // Muzzle 생성
+        if (muzzleToUse != null && muzzleTransform != null)
+        {
+            GameObject flash = Instantiate(muzzleToUse, muzzleTransform.position, muzzleTransform.rotation, muzzleTransform);
+            Destroy(flash, muzzleDuration);
+        }
+
+        // 총소리 재생
+        if (audioSource != null && fireSound != null)
+        {
+            audioSource.PlayOneShot(fireSound);
+        }
     }
 }

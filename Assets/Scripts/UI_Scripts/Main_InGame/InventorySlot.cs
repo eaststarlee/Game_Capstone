@@ -3,21 +3,18 @@ using UnityEngine;
 [System.Serializable]
 public class InventorySlot
 {
-    public string itemName;
-    public int amount;
+    public string itemName;  // 슬롯에 들어있는 아이템 이름
 
-    // 수량별 이미지 배열 (0~max 수량용)
-    public Sprite[] amountSprites;
+    // 아이템 존재 여부
+    public bool HasItem => !string.IsNullOrEmpty(itemName);
 
-    public bool IsEmpty => amount <= 0;
-
-    // 현재 수량에 맞는 이미지 반환
-    public Sprite GetSpriteForAmount()
+    // 슬롯 초기화
+    public void Clear()
     {
-        if (IsEmpty || amountSprites == null || amountSprites.Length == 0)
-            return null;
-
-        int index = Mathf.Clamp(amount - 1, 0, amountSprites.Length - 1);
-        return amountSprites[index];
+        itemName = null;
     }
+
+    // UI용: 슬롯에 표시할 아이콘 반환 (참고용, 필요시 연결)
+    public Sprite itemIcon; // 아이템 하나당 하나의 아이콘
+    public Sprite GetSprite() => HasItem ? itemIcon : null;
 }
