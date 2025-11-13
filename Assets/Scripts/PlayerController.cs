@@ -1,12 +1,14 @@
 ﻿using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float speed = 12f;
-    [Range(0.1f, 20f)] public float surfaceSpeedMultiplier = 1f;  // 잉크 등 효과 배율
+    public float speed = 5f;
+    public float surfaceSpeedMultiplier = 1f;
+
     public float gravity = -9.81f;
-    public float jumpHeight = 3f;
+    public float jumpHeight = 1f;
 
     [Header("Mouse Settings")]
     public float mouseSensitivity = 100f;
@@ -24,72 +26,43 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public bool inputEnabled = true;
 
     private CharacterController controller;
-    private float xRotation = 0f;
     private Vector3 velocity;
     private bool isGrounded;
-    private bool wasGrounded;
+    private float xRotation = 0f;
 
-    void Start()
+    [HideInInspector] public float surfaceJumpMultiplier = 1f;
+    [HideInInspector] public float surfaceGravityMultiplier = 1f;
+
+    // Blue: (이제는 거의 안 쓰지만 남겨두는) 슈퍼점프 상태
+    private bool superJumpEnabled = false;
+    private float superJumpForce = 8f;
+
+    // Yellow: 벽달리기
+    private bool wallRunEnabled = false;
+    private float wallRunUpSpeed = 4f;
+    private float wallRunGrav = -3f;
+    private float wallCheckDist = 0.6f;
+    private LayerMask wallMask;
+
+    private void Awake()
     {
         controller = GetComponent<CharacterController>();
-        if (controller == null)
-            controller = gameObject.AddComponent<CharacterController>();
+
         if (playerCamera == null)
             playerCamera = Camera.main;
-
-        if (playerCamera != null && playerBody != null)
-        {
-            playerCamera.transform.SetParent(playerBody);
-            playerCamera.transform.localPosition = new Vector3(0, 0.5f, 0);
-        }
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (playerBody == null)
+            playerBody = transform;
     }
 
-    void Update()
+    private void Update()
     {
-        wasGrounded = isGrounded;
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+        if (!inputEnabled) return;
 
-        if (!wasGrounded && isGrounded)
-            weaponSway?.ApplyLandingBob();
-
-        if (isGrounded && velocity.y < 0)
-            velocity.y = -2f;
-
-        if (inputEnabled)
-        {
-            HandleRotation();
-            HandleMovement();
-        }
-
-        // 중력
-        velocity.y += gravity * Time.deltaTime;
-
-        // ✅ 이동과 중력을 한 번의 Move로 처리 (핵심)
-        controller.Move(velocity * Time.deltaTime);
+        HandleMouseLook();
+        HandleMovement();
     }
 
-    private void HandleMovement()
-    {
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
-        Vector3 move = transform.right * x + transform.forward * z;
-
-        // 점프
-        if (Input.GetButtonDown("Jump") && isGrounded)
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-
-        // ✅ 여기서 multiplier 적용
-        Vector3 horizontal = move * speed * surfaceSpeedMultiplier;
-
-        // ✅ 중력 벡터에 더해 최종 이동벡터 계산
-        velocity.x = horizontal.x;
-        velocity.z = horizontal.z;
-    }
-
-    private void HandleRotation()
+    private void HandleMouseLook()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
@@ -99,7 +72,100 @@ public class PlayerController : MonoBehaviour
 
         if (playerCamera != null)
             playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        if (playerBody != null)
-            playerBody.Rotate(Vector3.up * mouseX);
+
+        playerBody.Rotate(Vector3.up * mouseX);
+    }
+
+    private void HandleMovement()
+    {
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+
+        if (isGrounded && velocity.y < 0f)
+            velocity.y = -2f;
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+
+        Vector3 move =
+            playerBody.right * x +
+            playerBody.forward * z;
+
+        controller.Move(move * speed * surfaceSpeedMultiplier * Time.deltaTime);
+
+        if (Input.GetButtonDown("Jump"))
+        {
+            // 🔸 기본 점프 (이제 파란 잉크는 여기 안 타고, InkArea에서 바로 ForceJump로 처리)
+            if (isGrounded)
+            {
+                float effectiveJump = jumpHeight * surfaceJumpMultiplier;
+                velocity.y = Mathf.Sqrt(effectiveJump * -2f * gravity);
+            }
+            else if (superJumpEnabled)
+            {
+                // 혹시 다른 용도로 쓸 수도 있으니 남겨둔 로직
+                velocity.y = superJumpForce;
+            }
+        }
+
+        if (wallRunEnabled && !isGrounded && IsNearWall())
+        {
+            if (Input.GetKey(KeyCode.Space))
+            {
+                velocity.y = Mathf.Max(velocity.y, wallRunUpSpeed);
+            }
+
+            velocity.y += wallRunGrav * Time.deltaTime;
+        }
+        else
+        {
+            float effectiveGravity = gravity * surfaceGravityMultiplier;
+            velocity.y += effectiveGravity * Time.deltaTime;
+        }
+
+        controller.Move(velocity * Time.deltaTime);
+    }
+
+    // === 🔵 파란 잉크 전용: 강제 점프 메서드 ===
+    public void ForceJump(float force)
+    {
+        // 언제든 Y속도를 이 값으로 갈아끼워 바로 점프
+        velocity.y = force;
+    }
+
+    // === Blue: 예전 슈퍼점프용 API(혹시 다른 데서 쓸 수도 있으니 유지) ===
+    public void EnableSuperJump(float force)
+    {
+        superJumpEnabled = true;
+        superJumpForce = force;
+    }
+
+    public void DisableSuperJump()
+    {
+        superJumpEnabled = false;
+    }
+
+    // === Yellow: 벽달리기 제어 ===
+    public void EnableWallRun(bool enable, float upSpeed, float gravWhileRun, float checkDist, LayerMask mask)
+    {
+        wallRunEnabled = enable;
+        wallRunUpSpeed = upSpeed;
+        wallRunGrav = gravWhileRun;
+        wallCheckDist = checkDist;
+        wallMask = mask;
+    }
+
+    private bool IsNearWall()
+    {
+        Transform t = playerBody != null ? playerBody : transform;
+
+        return Physics.Raycast(t.position, t.right, wallCheckDist, wallMask)
+            || Physics.Raycast(t.position, -t.right, wallCheckDist, wallMask);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck == null) return;
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(groundCheck.position, groundDistance);
     }
 }
