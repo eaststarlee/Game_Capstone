@@ -126,6 +126,7 @@ MonoBehaviour:
   inkDecalObjectPrefab: {fileID: 976191768361698509, guid: fe87a8740e1f7c24482bb523066e2137, type: 3}
   lifeTime: 20
   prefabColor: {r: 1, g: 0, b: 0, a: 0}
+  inkType: 1
 --- !u!54 &2014487676730146142
 Rigidbody:
   m_ObjectHideFlags: 0

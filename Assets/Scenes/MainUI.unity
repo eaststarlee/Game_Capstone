@@ -8204,13 +8204,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   keyItems:
-  - key: 257
+  - key: 282
     itemName: RED
-  - key: 258
+  - key: 283
     itemName: YELLOW
-  - key: 259
+  - key: 284
     itemName: BLUE
-  - key: 260
+  - key: 285
     itemName: BLACK
 --- !u!1 &1209208169
 GameObject:
@@ -10889,6 +10889,7 @@ MonoBehaviour:
   optionsPanel: {fileID: 1517701955}
   controlsPanel: {fileID: 808154112}
   tutorialsPanel: {fileID: 775051864}
+  exemptSceneName: MainScene
 --- !u!1 &1599208870
 GameObject:
   m_ObjectHideFlags: 0
