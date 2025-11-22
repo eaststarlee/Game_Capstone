@@ -72,7 +72,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inkType: 2
   speedMultiplier: 5
+  redEffectPrefab: {fileID: 0}
   superJumpForce: 8
+  blueEffectPrefab: {fileID: 5307090755344049252, guid: 9a8aa82bcc57ec0488d1115eb5d82d7f, type: 3}
   enableWallRun: 0
   wallRunUpSpeed: 4
   wallRunGrav: -3
@@ -80,6 +82,7 @@ MonoBehaviour:
   wallMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  yellowEffectPrefab: {fileID: 0}
 --- !u!65 &-2446166736407711808
 BoxCollider:
   m_ObjectHideFlags: 0

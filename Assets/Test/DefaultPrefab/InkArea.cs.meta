@@ -1,2 +1,14 @@
 fileFormatVersion: 2
 guid: bd72e4050953bb4409791952d6d28a5f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - redEffectPrefab: {instanceID: 0}
+  - blueEffectPrefab: {instanceID: 0}
+  - yellowEffectPrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

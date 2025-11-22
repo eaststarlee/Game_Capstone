@@ -44,6 +44,8 @@ public class PlayerController : MonoBehaviour
     private float wallCheckDist = 0.6f;
     private LayerMask wallMask;
 
+    public bool isWallRunning { get; private set; } = false;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -152,6 +154,7 @@ public class PlayerController : MonoBehaviour
         wallRunGrav = gravWhileRun;
         wallCheckDist = checkDist;
         wallMask = mask;
+        isWallRunning = enable;
     }
 
     private bool IsNearWall()
