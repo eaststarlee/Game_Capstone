@@ -532,7 +532,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 319
+    m_Bits: 6463
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -3016,6 +3016,7 @@ GameObject:
   - component: {fileID: 3706602623491684674}
   - component: {fileID: 8124738955975098402}
   - component: {fileID: 2375081151651856588}
+  - component: {fileID: 7769928976559745097}
   m_Layer: 2
   m_Name: Player
   m_TagString: Player
@@ -3195,7 +3196,7 @@ Rigidbody:
   m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
 --- !u!114 &2375081151651856588
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3213,6 +3214,24 @@ MonoBehaviour:
   yellowTarget: {fileID: 0}
   duration: 1
   playerTag: Player
+--- !u!114 &7769928976559745097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7314762521917911667}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 140124b8235f0534f9ba7f42943545a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 5
+  currentHealth: 0
+  invincibilityDuration: 3
+  respawnPoint: {x: 0, y: 0, z: 0}
+  deathYLevel: -100
+  weaponRoot: {fileID: 5392312936968036275}
 --- !u!1 &7823932334228420905
 GameObject:
   m_ObjectHideFlags: 0

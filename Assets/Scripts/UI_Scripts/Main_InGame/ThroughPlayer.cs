@@ -11,5 +11,6 @@ public class ThroughPlayer : MonoBehaviour
         Physics.IgnoreLayerCollision(8, 9, true);
         // Bullet 레이어: 8, Invisible Object 레이어 : 10 . 총알과 보이지 않는 물체가 충돌하지 않습니다.
         Physics.IgnoreLayerCollision(8, 10, true);
+        Physics.IgnoreLayerCollision(8, 11, true);
     }
 }

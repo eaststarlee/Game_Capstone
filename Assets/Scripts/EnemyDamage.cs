@@ -25,6 +25,7 @@ public class EnemyDamage : MonoBehaviour
         // 여기(트리거 자식)에는 Rigidbody를 붙이지 않습니다.
     }
 
+
     private void OnTriggerEnter(Collider other)
     {
         TryDamage(other);
@@ -41,6 +42,14 @@ public class EnemyDamage : MonoBehaviour
 
         if (Time.time - lastHitTime < hitCooldown) return;
         lastHitTime = Time.time;
+
+        // 추가: 플레이어의 Rigidbody를 강제로 깨웁니다.
+        // 멈춰 있어도 "넌 계속 계산 중이야!"라고 알려주는 역할입니다.
+        Rigidbody playerRb = other.attachedRigidbody;
+        if (playerRb != null && playerRb.IsSleeping())
+        {
+            playerRb.WakeUp();
+        }
 
         PlayerHealth ph = other.GetComponent<PlayerHealth>();
         if (ph == null) ph = other.GetComponentInParent<PlayerHealth>();

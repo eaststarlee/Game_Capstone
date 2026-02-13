@@ -7,7 +7,7 @@ public class InkProjectileController : MonoBehaviour
     [SerializeField] private GameObject inkDecalObjectPrefab; // Red/Blue/Yellow/Black 데칼 프리팹
     [SerializeField] private float lifeTime = 5f;
     [SerializeField] private Color prefabColor = Color.white; // 탄환 메쉬 색칠
-    [SerializeField] private InkType inkType = InkType.Default;
+    [SerializeField] public InkType inkType = InkType.Default;
 
     private Rigidbody rb;
     private Vector3 dir;
@@ -116,6 +116,7 @@ public class InkProjectileController : MonoBehaviour
 
         Destroy(gameObject);
     }
+    public InkType GetInkType() { return inkType; }
 }
 
 // 검은 잉크가 호출하는 인터페이스
@@ -123,3 +124,4 @@ public interface IBreakable
 {
     void Break();
 }
+
