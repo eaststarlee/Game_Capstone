@@ -675,7 +675,7 @@ MonoBehaviour:
   playerTransform: {fileID: 0}
   weakPointShield: {fileID: 1357701083087347289}
   detectionRange: 15
-  releaseRange: 35
+  releaseRange: 50
   bossCenterAnchor: {fileID: 0}
   flyHeight: 15
   pattern4Height: 20
