@@ -8,6 +8,13 @@ public class PlayerHealth : MonoBehaviour
     public int maxHealth = 5;
     public int currentHealth;
 
+    // 자동 회복 관련 설정 변수
+    [Header("Auto Regen System")]
+    public float noDamageDuration = 7f; // 피격 후 대기 시간 (7초)
+    public float regenSpeed = 2f;       // 한 칸 차는 시간 (2초)
+    private float lastDamageTime;       // 마지막 피격 시점 기록
+    private float currentRegenTimer;    // 회복 진행도 타이머
+
     [Header("Invincibility Settings")]
     public float invincibilityDuration = 3f;
     private bool isInvincible = false;
@@ -29,6 +36,9 @@ public class PlayerHealth : MonoBehaviour
         respawnPoint = transform.position;
         currentHealth = maxHealth;
 
+        // 시작할 때 마지막 피격 시간 초기화
+        lastDamageTime = Time.time;
+
         // 하위 모든 렌더러 자동 탐색
         if (weaponRoot != null)
         {
@@ -47,11 +57,59 @@ public class PlayerHealth : MonoBehaviour
             Debug.Log($"[PlayerHealth] 낙사로 인한 게임 오버! Y: {transform.position.y}");
             Respawn();
         }
+
+        // 매 프레임 자동 회복 체크
+        HandleAutoRegen();
+    }
+
+    // 자동 회복 로직 함수
+    private void HandleAutoRegen()
+    {
+        // 체력이 이미 가득 찼으면 로직 중단
+        if (currentHealth >= maxHealth)
+        {
+            currentRegenTimer = 0f;
+            return;
+        }
+
+        // 마지막 피격 이후 7초가 지났는지 확인
+        if (Time.time - lastDamageTime >= noDamageDuration)
+        {
+            // 2초 동안 타이머 누적
+            currentRegenTimer += Time.deltaTime;
+
+            // 타이머가 2초(regenSpeed)를 넘기면 체력 1 회복
+            if (currentRegenTimer >= regenSpeed)
+            {
+                currentHealth++;
+                currentRegenTimer = 0f; // 다음 칸을 위해 타이머 리셋
+                Debug.Log($"[AutoRegen] 체력 자동 회복! 현재 HP: {currentHealth}");
+            }
+        }
+        else
+        {
+            // 아직 7초가 안 지났으면 회복 진행도 0으로 유지
+            currentRegenTimer = 0f;
+        }
+    }
+
+    // UI 스크립트에서 현재 차오르는 비율(0.0 ~ 1.0)을 가져가기 위한 함수
+    public float GetRegenProgress()
+    {
+        if (currentHealth >= maxHealth) return 0f;
+        if (Time.time - lastDamageTime < noDamageDuration) return 0f;
+
+        // 현재 진행도 / 목표 시간 (예: 1초 지났으면 0.5 반환)
+        return Mathf.Clamp01(currentRegenTimer / regenSpeed);
     }
 
     public void TakeDamage(int damage)
     {
         if (isInvincible) return;
+
+        // 피격 시점 기록 및 회복 타이머 초기화
+        lastDamageTime = Time.time;
+        currentRegenTimer = 0f;
 
         currentHealth -= damage;
         Debug.Log($"[PlayerHealth] 피격! 남은 HP: {currentHealth}");
@@ -66,7 +124,6 @@ public class PlayerHealth : MonoBehaviour
             StartCoroutine(BecomeInvincible());
         }
     }
-
     private IEnumerator BecomeInvincible()
     {
         isInvincible = true;
@@ -105,6 +162,10 @@ public class PlayerHealth : MonoBehaviour
         isInvincible = false;
         SetWeaponVisible(true);
 
+        // 부활 시에도 회복 타이머 초기화
+        lastDamageTime = Time.time;
+        currentRegenTimer = 0f;
+
         CharacterController cc = GetComponent<CharacterController>();
         if (cc != null)
         {
@@ -123,15 +184,12 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("[PlayerHealth] 세이브포인트 업데이트: " + newPoint);
     }
 
-    // PlayerHealth.cs 파일 내부에 추가
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        // 나(플레이어)와 부딪힌 물체에 EnemyDamage가 있는지 확인
         EnemyDamage enemy = hit.gameObject.GetComponent<EnemyDamage>();
 
         if (enemy != null)
         {
-            // 피격 처리
             TakeDamage(enemy.damageAmount);
         }
     }
