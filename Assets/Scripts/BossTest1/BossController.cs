@@ -6,29 +6,32 @@ using UnityEngine.UI;
 public class BossController : MonoBehaviour
 {
     [Header("컴포넌트 연결")]
-    public GameObject dashIndicator;   // 패턴 1용 Quad
-    public GameObject wideAreaQuad;    // 패턴 2용 광역 Quad
-    public GameObject platformGroup;   // 패턴 2 회피용 발판
-    public GameObject explosionEffect; // 패턴 2 폭발 이펙트
+    public GameObject dashIndicator;
+    public GameObject wideAreaQuad;
+    public GameObject platformGroup;
+    public GameObject explosionEffect;
     public Transform playerTransform;
     private CharacterController playerController;
     private NavMeshAgent agent;
-    private BossHealth health;         // 보스 체력 스크립트 참조
+    private BossHealth health;
 
     [Header("보호 시스템")]
-    public GameObject weakPointShield; // 약점을 감싸고 있는 보호막 오브젝트
+    public GameObject weakPointShield;
 
-    [Header("거리 설정 (이격 시스템)")]
-    public float detectionRange = 15f; // 처음 발견하는 거리 (작게)
-    public float releaseRange = 35f;   // 전투를 포기하는 거리 (크게)
+    [Header("거리 설정")]
+    public float detectionRange = 15f;
+    public float releaseRange = 35f;
 
     [Header("위치 설정")]
-    public Transform bossCenterAnchor; // 보스룸 중앙 기준점
-    public float flyHeight = 15f;      // 패턴 2 높이
-    public float pattern4Height = 20f; // 패턴 4 높이
+    public Transform bossCenterAnchor;
+    public float flyHeight = 15f;
+    public float pattern4Height = 20f;
+
+    [Header("패턴 추가: 소환")]
+    public BossDroneSpawner ghostSpawner;
 
     private bool isUIVisible = false;
-    private Vector3 initialPosition; // 보스의 처음 위치 저장
+    private Vector3 initialPosition;
 
     [Header("Default 상태 설정")]
     public float defaultDuration = 5.0f;
@@ -36,7 +39,7 @@ public class BossController : MonoBehaviour
     private bool isPatternRunning = false;
     private float normalSpeed;
 
-    [Header("1번 패턴 설정")]
+    [Header("1번 패턴 설정 (돌진)")]
     public float dashSpeed = 35f;
     public float dashAcceleration = 500f;
     public float dashDistance = 15f;
@@ -44,23 +47,22 @@ public class BossController : MonoBehaviour
     public GameObject firePrefab;
     public float fireInterval = 1.0f;
 
-    [Header("3번 패턴 설정")]
+    [Header("3번 패턴 설정 (블랙홀)")]
     public float pullStrength = 8f;
     public float spinSpeed = 1000f;
     public float pattern3Duration = 15f;
 
     [Header("4번 패턴 설정 (타임어택)")]
-    public GameObject jumpMapPlatforms;  // 패턴 4 타임어택용 점프맵 그룹
-    public Image explosionTimerBar; // 패턴 4 타이머용 UI Image (Filled)
-    public float pattern4Elapsed = 0f; // 현재 얼마나 시간이 흘렀는지 (외부 참조용)
-    public GameObject bigExplosionEffect; // 패턴 4 전멸기 폭발
-    public float timeLimit = 15f;        // 전멸기 제한 시간
+    public GameObject jumpMapPlatforms;
+    public Image explosionTimerBar;
+    public float pattern4Elapsed = 0f;
+    public GameObject bigExplosionEffect;
+    public float timeLimit = 15f;
 
     private BossUIController uiController;
 
     void Awake()
     {
-        // 최신 함수 사용 (Awake나 Start에서 한 번만 호출)
         uiController = Object.FindFirstObjectByType<BossUIController>();
     }
 
@@ -70,11 +72,7 @@ public class BossController : MonoBehaviour
         health = GetComponent<BossHealth>();
         normalSpeed = agent.speed;
 
-        if (uiController != null)
-        {
-            uiController.SetVisible(false);
-            isUIVisible = false; // 확실히 하기 위해 다시 한번 명시
-        }
+        if (uiController != null) uiController.SetVisible(false);
 
         if (playerTransform == null)
             playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
@@ -88,14 +86,8 @@ public class BossController : MonoBehaviour
             health.OnGroggyEnd += HandleGroggyEnd;
         }
 
-        // 초기 비활성화
-        if (dashIndicator != null) dashIndicator.SetActive(false);
-        if (wideAreaQuad != null) wideAreaQuad.SetActive(false);
-        if (platformGroup != null) platformGroup.SetActive(false);
-        if (explosionEffect != null) explosionEffect.SetActive(false);
-        if (jumpMapPlatforms != null) jumpMapPlatforms.SetActive(false);
-
-        initialPosition = transform.position; // 시작 위치(지상) 저장
+        initialPosition = transform.position;
+        DisableAllPatternObjects();
     }
 
     void Update()
@@ -104,27 +96,22 @@ public class BossController : MonoBehaviour
 
         float dist = Vector3.Distance(transform.position, playerTransform.position);
 
-        // [핵심 로직] 상태에 따른 거리 체크
-        if (!isUIVisible) // 아직 인식 전이라면
+        if (!isUIVisible)
         {
-            if (dist <= detectionRange) // 좁은 범위 안에 들어오면 인식!
-            {
-                StartCombat();
-            }
+            if (dist <= detectionRange) StartCombat();
         }
-        else // 이미 전투 중이라면
+        else
         {
-            if (dist > releaseRange) // 넓은 범위를 완전히 벗어나야 리셋!
-            {
-                ResetBossCombat();
-            }
+            if (dist > releaseRange) ResetBossCombat();
         }
 
-        // 전투 중이고 패턴 중이 아닐 때만 추격
-        if (isUIVisible && !isPatternRunning)
+        if (isUIVisible && !isPatternRunning && health.currentStatus == BossHealth.BossState.Normal)
         {
-            agent.isStopped = false;
-            agent.SetDestination(playerTransform.position);
+            if (agent.isActiveAndEnabled)
+            {
+                agent.isStopped = false;
+                agent.SetDestination(playerTransform.position);
+            }
 
             defaultTimer += Time.deltaTime;
             if (defaultTimer >= defaultDuration)
@@ -139,39 +126,44 @@ public class BossController : MonoBehaviour
     {
         isPatternRunning = true;
 
-        // 패턴 1~3은 보호막 유지
         if (weakPointShield != null) weakPointShield.SetActive(true);
 
+        // 1. 돌진 (플레이어 경직 포함)
         yield return StartCoroutine(StartPattern1());
+
+        // 2. 공중 광역기
         yield return StartCoroutine(StartPattern2());
+
+        // 3. 소환 패턴 (패턴 2가 확실히 끝난 후 실행)
+        yield return StartCoroutine(StartPatternSummon());
+
+        // 4. 블랙홀
         yield return StartCoroutine(StartPattern3());
 
-        // 패턴 4 진입 시 보호막 해제 (약점 노출!)
         if (weakPointShield != null) weakPointShield.SetActive(false);
 
+        // 5. 타임어택 전멸기
         yield return StartCoroutine(StartPattern4());
 
         isPatternRunning = false;
     }
 
-
-    // --- 패턴 1: 돌진 ---
+    // --- 수정된 패턴 1: 플레이어 경직(Stun) 복구 ---
     IEnumerator StartPattern1()
     {
         for (int i = 0; i < 4; i++)
         {
+            if (health.currentStatus != BossHealth.BossState.Normal) yield break;
+
             agent.isStopped = true;
             agent.velocity = Vector3.zero;
 
             float timer = 0f;
-            while (timer < 3f)
-            {
-                LookAtPlayer();
-                timer += Time.deltaTime;
-                yield return null;
-            }
+            while (timer < 2f) { LookAtPlayer(); timer += Time.deltaTime; yield return null; }
 
+            // [경직 시작] 플레이어 움직임 봉쇄
             if (playerController != null) playerController.enabled = false;
+
             if (dashIndicator != null)
             {
                 dashIndicator.transform.localPosition = new Vector3(0, 0, dashDistance / 2f);
@@ -180,7 +172,10 @@ public class BossController : MonoBehaviour
             }
 
             yield return new WaitForSeconds(0.8f);
+
             if (dashIndicator != null) dashIndicator.SetActive(false);
+
+            // [경직 해제] 보스가 돌진하기 직전에 다시 풀어줌
             if (playerController != null) playerController.enabled = true;
 
             Vector3 startPos = transform.position;
@@ -192,7 +187,7 @@ public class BossController : MonoBehaviour
             agent.SetDestination(finalDashTarget);
 
             float dashTimeout = 0f;
-            while (agent.pathPending || agent.remainingDistance > 0.1f)
+            while (agent.pathPending || agent.remainingDistance > 0.5f)
             {
                 dashTimeout += Time.deltaTime;
                 if (dashTimeout > 1.5f) break;
@@ -200,22 +195,22 @@ public class BossController : MonoBehaviour
             }
 
             SpawnFireTrail(startPos, transform.position);
-            agent.speed = 0;
-            yield return new WaitForSeconds(1.5f);
+            agent.velocity = Vector3.zero;
+            yield return new WaitForSeconds(1.0f);
 
             agent.speed = normalSpeed;
             agent.acceleration = 8f;
         }
     }
 
-    // --- 패턴 2: 광역 공중 공격 ---
+    // --- 수정된 패턴 2: 착지 안전장치 강화 ---
     IEnumerator StartPattern2()
     {
         agent.enabled = false;
         Vector3 targetAirPos = bossCenterAnchor.position + Vector3.up * flyHeight;
-
         float moveTime = 0f;
         Vector3 startPos = transform.position;
+
         while (moveTime < 2f)
         {
             moveTime += Time.deltaTime;
@@ -228,12 +223,10 @@ public class BossController : MonoBehaviour
         {
             wideAreaQuad.SetActive(true);
             float scaleTimer = 0f;
-            Vector3 startScale = new Vector3(0.1f, 0.1f, 5f);
-            Vector3 endScale = new Vector3(1f, 1f, 5f);
-            while (scaleTimer < 10f)
+            while (scaleTimer < 5f)
             {
                 scaleTimer += Time.deltaTime;
-                wideAreaQuad.transform.localScale = Vector3.Lerp(startScale, endScale, scaleTimer / 10f);
+                wideAreaQuad.transform.localScale = Vector3.Lerp(new Vector3(0.1f, 0.1f, 5f), new Vector3(1f, 1f, 5f), scaleTimer / 5f);
                 yield return null;
             }
         }
@@ -248,51 +241,75 @@ public class BossController : MonoBehaviour
         if (wideAreaQuad != null) wideAreaQuad.SetActive(false);
         if (platformGroup != null) platformGroup.SetActive(false);
 
+        // 착지
         moveTime = 0f;
         Vector3 airPos = transform.position;
-        Vector3 groundPos = bossCenterAnchor.position;
+        Vector3 groundPos = new Vector3(bossCenterAnchor.position.x, initialPosition.y, bossCenterAnchor.position.z);
         while (moveTime < 2f)
         {
             moveTime += Time.deltaTime;
             transform.position = Vector3.Lerp(airPos, groundPos, moveTime / 2f);
             yield return null;
         }
+
         agent.enabled = true;
+        // 핵심: 에이전트가 완벽하게 NavMesh에 안착할 때까지 "한 프레임 더" 대기
+        yield return new WaitForEndOfFrame();
+        yield return new WaitUntil(() => agent.isOnNavMesh);
     }
 
-    // --- 패턴 3: 블랙홀 회전 ---
+    IEnumerator StartPatternSummon()
+    {
+        Debug.Log("소환 패턴 실행됨!");
+        if (agent.isActiveAndEnabled)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        if (ghostSpawner != null)
+        {
+            ghostSpawner.SummonWave();
+        }
+        else
+        {
+            Debug.LogError("GhostSpawner가 연결되지 않았습니다!");
+        }
+
+        yield return new WaitForSeconds(2.0f);
+
+        if (agent.isActiveAndEnabled) agent.isStopped = false;
+    }
+
+    // --- 나머지 패턴 및 함수는 이전과 동일하지만 흐름 끊김 방지를 위해 포함 ---
     IEnumerator StartPattern3()
     {
         float timer = 0f;
-        agent.isStopped = true;
-        agent.velocity = Vector3.zero;
-        Quaternion initialRotation = transform.rotation;
-
+        if (agent.isActiveAndEnabled) { agent.isStopped = true; agent.velocity = Vector3.zero; }
+        Quaternion initRot = transform.rotation;
         while (timer < pattern3Duration)
         {
+            if (health.currentStatus != BossHealth.BossState.Normal) yield break;
             timer += Time.deltaTime;
             transform.Rotate(0, spinSpeed * Time.deltaTime, 0);
             if (playerTransform != null && playerController != null)
             {
-                Vector3 pullDirection = (transform.position - playerTransform.position).normalized;
-                pullDirection.y = 0;
-                playerController.Move(pullDirection * pullStrength * Time.deltaTime);
+                Vector3 pullDir = (transform.position - playerTransform.position).normalized;
+                pullDir.y = 0;
+                playerController.Move(pullDir * pullStrength * Time.deltaTime);
             }
             yield return null;
         }
-        transform.rotation = initialRotation;
+        transform.rotation = initRot;
         yield return new WaitForSeconds(1f);
     }
 
-    // --- [수정] 패턴 4: 타임어택 점프맵 ---
     IEnumerator StartPattern4()
     {
-        Debug.Log("패턴 4 시작: 공중으로 상승");
         agent.enabled = false;
-
         Vector3 targetPos4 = bossCenterAnchor.position + Vector3.up * pattern4Height;
-
-        // 1. 부드럽게 상승 (수정됨)
         float moveTime = 0f;
         Vector3 startPos = transform.position;
         while (moveTime < 2f)
@@ -301,100 +318,54 @@ public class BossController : MonoBehaviour
             transform.position = Vector3.Lerp(startPos, targetPos4, moveTime / 2f);
             yield return null;
         }
-        transform.position = targetPos4;
-
-        // 2. 타임어택 개시 (기존 15초 혹은 30초 대기 로직 대체)
         if (jumpMapPlatforms != null) jumpMapPlatforms.SetActive(true);
         if (explosionTimerBar != null) explosionTimerBar.gameObject.SetActive(true);
 
-        pattern4Elapsed = 0f; // ★ UI 참조용 변수 초기화
-
-        float elapsed = 0f;
-        while (elapsed < timeLimit)
+        pattern4Elapsed = 0f;
+        while (pattern4Elapsed < timeLimit)
         {
-            elapsed += Time.deltaTime;
-            pattern4Elapsed = elapsed; // ★ 매 프레임 업데이트하여 UI에 전달
-
-            // 타이머 바 갱신
-            if (explosionTimerBar != null)
-            {
-                explosionTimerBar.fillAmount = elapsed / timeLimit;
-
-                // 80% 이상 경과 시 깜빡임 연출
-                if (elapsed / timeLimit > 0.8f)
-                {
-                    explosionTimerBar.color = (Mathf.FloorToInt(Time.time * 10) % 2 == 0) ? Color.red : Color.white;
-                }
-            }
+            if (health.currentStatus != BossHealth.BossState.Normal) break;
+            pattern4Elapsed += Time.deltaTime;
+            if (explosionTimerBar != null) explosionTimerBar.fillAmount = pattern4Elapsed / timeLimit;
             yield return null;
         }
 
-        // 3. 30초 생존 시 전멸기 발동 (그로기가 안 터졌을 때만 실행됨)
-        if (bigExplosionEffect != null)
+        if (health.currentStatus == BossHealth.BossState.Normal && bigExplosionEffect != null)
         {
             bigExplosionEffect.SetActive(true);
-            Debug.Log("<color=red>전멸기 폭발!</color>");
             yield return new WaitForSeconds(2f);
             bigExplosionEffect.SetActive(false);
-
-            // 전멸기가 시작되자마자 타이머 UI는 역할을 다했으므로 끕니다.
-            if (explosionTimerBar != null) explosionTimerBar.gameObject.SetActive(false);
-            pattern4Elapsed = 0f;
         }
 
-        // 4. [추가] 패턴 종료 후 지상으로 복귀
+        if (explosionTimerBar != null) explosionTimerBar.gameObject.SetActive(false);
         if (jumpMapPlatforms != null) jumpMapPlatforms.SetActive(false);
 
-        Debug.Log("패턴 4 종료: 지상으로 착지");
         moveTime = 0f;
         Vector3 airPos = transform.position;
-        Vector3 groundPos = new Vector3(bossCenterAnchor.position.x, 0f, bossCenterAnchor.position.z);
+        Vector3 groundPos = new Vector3(bossCenterAnchor.position.x, initialPosition.y, bossCenterAnchor.position.z);
         while (moveTime < 2f)
         {
             moveTime += Time.deltaTime;
             transform.position = Vector3.Lerp(airPos, groundPos, moveTime / 2f);
             yield return null;
         }
-        transform.position = groundPos;
-
         agent.enabled = true;
+        yield return new WaitUntil(() => agent.isOnNavMesh);
     }
 
     void HandleGroggyStart()
     {
-        if (dashIndicator != null) dashIndicator.SetActive(false);
-        if (wideAreaQuad != null) wideAreaQuad.SetActive(false);
-        if (platformGroup != null) platformGroup.SetActive(false);
-        if (jumpMapPlatforms != null) jumpMapPlatforms.SetActive(false);
-        if (explosionEffect != null) explosionEffect.SetActive(false);
-
-        // [추가] 패턴 4 관련 UI 및 플랫폼 즉시 정리
-        pattern4Elapsed = 0f;
-        if (explosionTimerBar != null)
-        {
-            explosionTimerBar.fillAmount = 0f;
-            explosionTimerBar.gameObject.SetActive(false);
-        }
-        if (jumpMapPlatforms != null) jumpMapPlatforms.SetActive(false);
-
-        if (explosionTimerBar != null) explosionTimerBar.gameObject.SetActive(false);
-        pattern4Elapsed = 0f;
-
+        if (playerController != null) playerController.enabled = true; // 그로기 시 플레이어 경직 강제 해제
+        DisableAllPatternObjects();
         StopAllCoroutines();
         StartCoroutine(GroggyDownAnimation());
     }
 
-    void HandleGroggyEnd()
-    {
-        agent.enabled = true;
-        isPatternRunning = false;
-        defaultTimer = 0f; // 초기화하여 추격부터 시작
-    }
+    void HandleGroggyEnd() { agent.enabled = true; isPatternRunning = false; defaultTimer = 0f; }
 
     IEnumerator GroggyDownAnimation()
     {
-        // 현재 위치에서 수직으로 바닥까지 추락
-        Vector3 groundPos = new Vector3(transform.position.x, 0f, transform.position.z);
+        Vector3 groundPos = new Vector3(transform.position.x, initialPosition.y, transform.position.z);
         float fallSpeed = 0f;
         while (Vector3.Distance(transform.position, groundPos) > 0.1f)
         {
@@ -402,11 +373,8 @@ public class BossController : MonoBehaviour
             transform.position = Vector3.MoveTowards(transform.position, groundPos, fallSpeed * Time.deltaTime);
             yield return null;
         }
-        transform.position = groundPos;
-        Debug.Log("보스 추락 완료");
     }
 
-    // --- 유틸리티 함수 ---
     void LookAtPlayer()
     {
         Vector3 direction = (playerTransform.position - transform.position).normalized;
@@ -431,42 +399,23 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // 모든 상태를 초기화하고 중앙으로 복귀시키는 함수
-    private void StartCombat()
-    {
-        isUIVisible = true;
-        uiController?.SetVisible(true);
-        Debug.Log("전투 개시!");
-    }
+    private void StartCombat() { isUIVisible = true; uiController?.SetVisible(true); }
 
     private void ResetBossCombat()
     {
         StopAllCoroutines();
+        if (playerController != null) playerController.enabled = true;
         isPatternRunning = false;
         isUIVisible = false;
         uiController?.SetVisible(false);
-
         defaultTimer = 0f;
         health.ResetHP();
-
-        // 1. 공중 위치 및 중력/에이전트 복구
-        agent.enabled = true; // 에이전트 다시 활성화
-
-        // 2. 강제 착지: Y축 값을 초기 시작 위치로 고정
-        Vector3 resetPos = new Vector3(transform.position.x, initialPosition.y, transform.position.z);
-        transform.position = resetPos;
-
-        // 3. 중앙 앵커로 복귀 명령
-        if (bossCenterAnchor != null)
-        {
-            agent.SetDestination(bossCenterAnchor.position);
-        }
-
-        // 4. 모든 패턴 기믹 끄기
+        agent.enabled = true;
+        transform.position = initialPosition;
+        if (ghostSpawner != null) ghostSpawner.ClearAllDrones();
         DisableAllPatternObjects();
-
-        Debug.Log("<color=blue>보스 리셋: 지상 복귀 및 앵커 이동</color>");
     }
+
     private void DisableAllPatternObjects()
     {
         if (dashIndicator != null) dashIndicator.SetActive(false);
@@ -474,5 +423,6 @@ public class BossController : MonoBehaviour
         if (platformGroup != null) platformGroup.SetActive(false);
         if (explosionEffect != null) explosionEffect.SetActive(false);
         if (jumpMapPlatforms != null) jumpMapPlatforms.SetActive(false);
+        if (explosionTimerBar != null) explosionTimerBar.gameObject.SetActive(false);
     }
 }

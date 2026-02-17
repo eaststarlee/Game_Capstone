@@ -8,9 +8,9 @@
 ## Unity Binary Assets (LFS가 아닌 일반 Git 바이너리로 관리) ##
 *.mat binary
 *.anim binary
-*.asset binary
-*.unity binary
-*.prefab binary
+*.asset filter=lfs diff=lfs merge=lfs -text
+*.unity filter=lfs diff=lfs merge=lfs -text
+*.prefab filter=lfs diff=lfs merge=lfs -text
 *.physicMaterial2D binary
 *.physicMaterial binary
 *.controller binary
