@@ -39,10 +39,15 @@ public class Drone : MonoBehaviour, IBreakable
 
     [Header("Damage")]
     public float damageRange = 1.2f;
-    public int damageToPlayer = 10;
+    public int damageToPlayer = 1; // 기존 10이었으나 플레이어 체력이 5이므로 즉사 방지를 위해 1로 수정
     public float hitCooldown = 0.25f;
     public bool selfDestructOnHit = true;
     public float selfDestructDelay = 0f;
+
+    [Header("Sound Effects (Contact)")]
+    public AudioClip contactSfx1;
+    public AudioClip contactSfx2;
+    [Range(0f, 1f)] public float contactSfxVolume = 1f;
 
     [Header("Break (Black Ink)")]
     public GameObject breakEffectPrefab;
@@ -60,14 +65,14 @@ public class Drone : MonoBehaviour, IBreakable
     private float pauseTimer = 0f;
 
     private bool isDead = false;
-    private bool hasDealtDamage = false;
-    private float lastHitTime = -999f;
 
     private Vector3 cachedSeparation = Vector3.zero;
     private int frameCounter = 0;
 
     private void Start()
     {
+        PlayerHealth.OnPlayerRespawn += OnPlayerRespawnEvent;
+
         if (target == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
@@ -104,8 +109,6 @@ public class Drone : MonoBehaviour, IBreakable
         pauseTimer = 0f;
 
         isDead = false;
-        hasDealtDamage = false;
-        lastHitTime = -999f;
 
         cachedSeparation = Vector3.zero;
         frameCounter = 0;
@@ -241,44 +244,9 @@ public class Drone : MonoBehaviour, IBreakable
         return cachedSeparation;
     }
 
+    // 데미지는 이제 EnemyDamage.cs에서 전담하므로 이 함수는 사용하지 않습니다.
     private void TryDamagePlayerByDistance()
     {
-        if (hasDealtDamage) return;
-
-        if (Time.time - lastHitTime < hitCooldown) return;
-        lastHitTime = Time.time;
-
-        if (target == null) return;
-
-        float dist = Vector3.Distance(transform.position, target.position);
-        if (dist > damageRange) return;
-
-        PlayerHealth ph = target.GetComponent<PlayerHealth>();
-        if (ph == null) ph = target.GetComponentInParent<PlayerHealth>();
-
-        if (ph != null)
-            ph.TakeDamage(damageToPlayer);
-
-        hasDealtDamage = true;
-
-        if (selfDestructOnHit)
-        {
-            if (freezeAfterHit)
-            {
-                isDead = true;
-                Collider col = GetComponent<Collider>();
-                if (col != null) col.enabled = false;
-
-                if (selfDestructDelay <= 0f) Destroy(gameObject);
-                else Destroy(gameObject, selfDestructDelay);
-            }
-            else
-            {
-                isDead = true;
-                if (selfDestructDelay <= 0f) Destroy(gameObject);
-                else Destroy(gameObject, selfDestructDelay);
-            }
-        }
     }
 
     public void Break()
@@ -296,5 +264,30 @@ public class Drone : MonoBehaviour, IBreakable
 
         if (destroyDelayAfterBreak <= 0f) Destroy(gameObject);
         else Destroy(gameObject, destroyDelayAfterBreak);
+    }
+
+    private void PlayContactSfx(AudioClip clip)
+    {
+        if (clip == null) return;
+        
+        GameObject sfxObj = new GameObject("DroneContactSfx");
+        sfxObj.transform.position = transform.position;
+        AudioSource source = sfxObj.AddComponent<AudioSource>();
+        source.clip = clip;
+        source.spatialBlend = 0f; // 2D (거리 무관)
+        source.volume = contactSfxVolume;
+        source.Play();
+        Destroy(sfxObj, clip.length + 0.1f);
+    }
+
+    private void OnDestroy()
+    {
+        PlayerHealth.OnPlayerRespawn -= OnPlayerRespawnEvent;
+    }
+
+    private void OnPlayerRespawnEvent()
+    {
+        // 부활 시 기존 드론은 화면에서 삭제
+        Destroy(gameObject);
     }
 }

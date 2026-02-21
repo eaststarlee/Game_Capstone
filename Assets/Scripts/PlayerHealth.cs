@@ -8,6 +8,9 @@ public class PlayerHealth : MonoBehaviour
     public int maxHealth = 5;
     public int currentHealth;
 
+    // 플레이어 부활 신호 전달용 글로벌 이벤트
+    public static event System.Action OnPlayerRespawn;
+
     // 자동 회복 관련 설정 변수
     [Header("Auto Regen System")]
     public float noDamageDuration = 7f; // 피격 후 대기 시간 (7초)
@@ -26,6 +29,12 @@ public class PlayerHealth : MonoBehaviour
     [Header("1인칭 시각 피드백 (무기 모델)")]
     public GameObject weaponRoot;
     private List<Renderer> weaponRenderers = new List<Renderer>();
+
+    [Header("Sound Effects")]
+    public AudioClip damageSfx;
+    public AudioClip healSfx;
+    public AudioClip respawnSfx;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
 
     public static PlayerHealth Instance;
 
@@ -84,6 +93,11 @@ public class PlayerHealth : MonoBehaviour
                 currentHealth++;
                 currentRegenTimer = 0f; // 다음 칸을 위해 타이머 리셋
                 Debug.Log($"[AutoRegen] 체력 자동 회복! 현재 HP: {currentHealth}");
+
+                if (healSfx != null)
+                {
+                    AudioSource.PlayClipAtPoint(healSfx, transform.position, sfxVolume);
+                }
             }
         }
         else
@@ -113,6 +127,11 @@ public class PlayerHealth : MonoBehaviour
 
         currentHealth -= damage;
         Debug.Log($"[PlayerHealth] 피격! 남은 HP: {currentHealth}");
+
+        if (damageSfx != null)
+        {
+            AudioSource.PlayClipAtPoint(damageSfx, transform.position, sfxVolume);
+        }
 
         if (currentHealth <= 0)
         {
@@ -157,6 +176,9 @@ public class PlayerHealth : MonoBehaviour
     {
         Debug.Log($"[PlayerHealth] 게임 오버: 부활 로직 실행. 위치: {respawnPoint}");
 
+        // 리스폰 시 이벤트 발생 (스포너 및 몬스터 초기화 등 외부 구독용)
+        OnPlayerRespawn?.Invoke();
+
         StopAllCoroutines();
         currentHealth = maxHealth;
         isInvincible = false;
@@ -177,6 +199,24 @@ public class PlayerHealth : MonoBehaviour
         {
             transform.position = respawnPoint;
         }
+
+        PlayerController pc = GetComponent<PlayerController>();
+        if (pc != null)
+        {
+            pc.ResetVelocity();
+        }
+
+        if (respawnSfx != null)
+        {
+            GameObject sfxObj = new GameObject("RespawnSfx");
+            sfxObj.transform.position = transform.position;
+            AudioSource source = sfxObj.AddComponent<AudioSource>();
+            source.clip = respawnSfx;
+            source.spatialBlend = 0f; // 2D (거리 무관 부활 사운드)
+            source.volume = sfxVolume;
+            source.Play();
+            Destroy(sfxObj, respawnSfx.length + 0.1f);
+        }
     }
     public void SetRespawnPoint(Vector3 newPoint)
     {
@@ -186,11 +226,15 @@ public class PlayerHealth : MonoBehaviour
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
+        // EnemyDamage.cs의 OnTriggerEnter에서 데미지 처리를 전담하므로
+        // PlayerHealth의 충돌 콜백에서 중복 데미지를 가하는 로직을 제거합니다.
+        /*
         EnemyDamage enemy = hit.gameObject.GetComponent<EnemyDamage>();
 
         if (enemy != null)
         {
             TakeDamage(enemy.damageAmount);
         }
+        */
     }
 }

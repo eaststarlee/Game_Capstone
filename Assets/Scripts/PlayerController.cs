@@ -23,6 +23,12 @@ public class PlayerController : MonoBehaviour
     [Header("Weapon Link")]
     public WeaponSway weaponSway;
 
+    [Header("Sound Effects")]
+    public AudioClip[] jumpSfx;
+    [Range(0f, 1f)] public float jumpSfxVolume = 1f;
+    public AudioClip walkSfx;
+    [Range(0f, 1f)] public float walkSfxVolume = 1f;
+
     [HideInInspector] public bool inputEnabled = true;
 
     private CharacterController controller;
@@ -46,6 +52,8 @@ public class PlayerController : MonoBehaviour
 
     public bool isWallRunning { get; private set; } = false;
 
+    private AudioSource walkAudioSource;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -54,6 +62,11 @@ public class PlayerController : MonoBehaviour
             playerCamera = Camera.main;
         if (playerBody == null)
             playerBody = transform;
+
+        // 걷기 전용 오디오 소스 동적 생성 (무한 반복 세팅)
+        walkAudioSource = gameObject.AddComponent<AudioSource>();
+        walkAudioSource.loop = true;
+        walkAudioSource.playOnAwake = false;
     }
 
     private void Update()
@@ -101,11 +114,13 @@ public class PlayerController : MonoBehaviour
             {
                 float effectiveJump = jumpHeight * surfaceJumpMultiplier;
                 velocity.y = Mathf.Sqrt(effectiveJump * -2f * gravity);
+                PlayJumpSound();
             }
             else if (superJumpEnabled)
             {
                 // 혹시 다른 용도로 쓸 수도 있으니 남겨둔 로직
                 velocity.y = superJumpForce;
+                PlayJumpSound();
             }
         }
 
@@ -125,6 +140,25 @@ public class PlayerController : MonoBehaviour
         }
 
         controller.Move(velocity * Time.deltaTime);
+
+        // --- 발소리 처리 (무한 반복 모드) ---
+        bool isMoving = (Mathf.Abs(x) > 0.01f || Mathf.Abs(z) > 0.01f);
+        if (isGrounded && isMoving)
+        {
+            if (!walkAudioSource.isPlaying && walkSfx != null)
+            {
+                walkAudioSource.clip = walkSfx;
+                walkAudioSource.volume = walkSfxVolume;
+                walkAudioSource.Play();
+            }
+        }
+        else
+        {
+            if (walkAudioSource.isPlaying)
+            {
+                walkAudioSource.Stop();
+            }
+        }
     }
 
     // === 🔵 파란 잉크 전용: 강제 점프 메서드 ===
@@ -170,5 +204,23 @@ public class PlayerController : MonoBehaviour
         if (groundCheck == null) return;
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(groundCheck.position, groundDistance);
+    }
+
+    public void ResetVelocity()
+    {
+        velocity = Vector3.zero;
+    }
+
+    private void PlayJumpSound()
+    {
+        if (jumpSfx != null && jumpSfx.Length > 0)
+        {
+            int index = Random.Range(0, jumpSfx.Length);
+            AudioClip clip = jumpSfx[index];
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, transform.position, jumpSfxVolume);
+            }
+        }
     }
 }

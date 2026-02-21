@@ -2,13 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DroneSpawner : MonoBehaviour
+public class DroneSpawner : MonoBehaviour, IBreakable
 {
     [Header("Prefab / Target")]
     public GameObject dronePrefab;
 
     [Tooltip("비워두면 Tag=Player 자동 검색")]
     public Transform playerTarget;
+
+    [Header("Activation")]
+    [Tooltip("체크 시, 플레이어가 감지 범위 내에 있을 때만 스폰 타이머가 돕니다.")]
+    public bool requirePlayerInRange = true;
+    [Tooltip("플레이어 감지 반경")]
+    public float activationRange = 15f;
 
     [Header("Wave Settings")]
     [Tooltip("웨이브 시작 간격(초)")]
@@ -49,12 +55,31 @@ public class DroneSpawner : MonoBehaviour
     [Header("Debug")]
     public bool debugLog = false;
 
+    [Header("Break (Black Ink Interaction)")]
+    public GameObject breakEffectPrefab;
+    public AudioClip breakSfx;
+    [Range(0f, 1f)] public float breakSfxVolume = 1f;
+
+    [Header("Sound Effects (Looping)")]
+    public AudioClip idleLoopSfx;
+    [Range(0f, 1f)] public float idleLoopSfxVolume = 1f;
+    private AudioSource idleAudioSource;
+
+    [Header("Health")]
+    [Tooltip("파괴되기 위해 필요한 피격 횟수")]
+    public int maxHP = 5;
+    private int currentHP;
+
     private readonly List<GameObject> alive = new List<GameObject>();
     private float timer = 0f;
     private bool spawning = false;
+    private bool isBroken = false;
 
     private void Start()
     {
+        PlayerHealth.OnPlayerRespawn += ResetSpawner;
+        currentHP = maxHP;
+
         if (playerTarget == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
@@ -62,13 +87,56 @@ public class DroneSpawner : MonoBehaviour
         }
 
         timer = -startDelay;
+
+        // 대기음(Loop) 오디오 소스 초기화
+        idleAudioSource = gameObject.AddComponent<AudioSource>();
+        idleAudioSource.spatialBlend = 0f; // 2D 음향 (거리에 상관없이 볼륨 고정)
+        idleAudioSource.loop = true;
+        idleAudioSource.playOnAwake = false;
     }
 
     private void Update()
     {
+        if (isBroken)
+        {
+            if (idleAudioSource != null && idleAudioSource.isPlaying)
+                idleAudioSource.Stop();
+            return;
+        }
         if (dronePrefab == null) return;
 
         CleanupNulls();
+
+        bool isPlayerInRange = true;
+
+        if (requirePlayerInRange && playerTarget != null)
+        {
+            float dist = Vector3.Distance(transform.position, playerTarget.position);
+            if (dist > activationRange)
+            {
+                isPlayerInRange = false;
+            }
+        }
+
+        // 범위 내 대기음(Loop) 처리
+        if (isPlayerInRange && idleLoopSfx != null)
+        {
+            if (!idleAudioSource.isPlaying)
+            {
+                idleAudioSource.clip = idleLoopSfx;
+                idleAudioSource.volume = idleLoopSfxVolume;
+                idleAudioSource.Play();
+            }
+        }
+        else
+        {
+            if (idleAudioSource != null && idleAudioSource.isPlaying)
+            {
+                idleAudioSource.Stop();
+            }
+        }
+
+        if (!isPlayerInRange) return; // 타이머 정지 처리
 
         timer += Time.deltaTime;
         if (!spawning && timer >= waveInterval)
@@ -85,6 +153,8 @@ public class DroneSpawner : MonoBehaviour
         int spawned = 0;
         while (spawned < dronesPerWave)
         {
+            if (isBroken) yield break;
+
             CleanupNulls();
             if (alive.Count >= maxAlive) break;
 
@@ -100,6 +170,8 @@ public class DroneSpawner : MonoBehaviour
 
     private void SpawnOne()
     {
+        if (isBroken) return;
+
         Vector3 spawnPos = transform.position + Vector3.up * spawnHeightOffset;
 
         if (spawnRadius > 0f)
@@ -142,15 +214,115 @@ public class DroneSpawner : MonoBehaviour
 
     public void ForceWave()
     {
+        if (isBroken) return;
         if (dronePrefab == null) return;
         if (!spawning) StartCoroutine(SpawnWave());
     }
 
     public void ForceSpawnOne()
     {
+        if (isBroken) return;
         if (dronePrefab == null) return;
         CleanupNulls();
         if (alive.Count >= maxAlive) return;
         SpawnOne();
+    }
+
+    // IBreakable 인터페이스 구현
+    public void Break()
+    {
+        if (isBroken) return;
+
+        // 체력 감소
+        currentHP--;
+
+        // 체력이 남아있다면 파괴되지 않음
+        if (currentHP > 0)
+        {
+            // (선택) 피격 이펙트나 사운드를 여기에 추가할 수 있습니다.
+            return;
+        }
+
+        isBroken = true;
+
+        if (idleAudioSource != null && idleAudioSource.isPlaying)
+        {
+            idleAudioSource.Stop();
+        }
+
+        // 1. 이펙트 재생
+        if (breakEffectPrefab != null)
+        {
+            Instantiate(breakEffectPrefab, transform.position, Quaternion.identity);
+        }
+
+        // 2. 사운드 재생
+        if (breakSfx != null)
+        {
+            // PlayClipAtPoint는 기본적으로 3D(spatialBlend=1)로 만들어지므로,
+            // 2D로 거리에 상관없이 들리게 하려면 직접 AudioSource를 만들어 재생합니다.
+            GameObject sfxObj = new GameObject("SpawnerBreakSfx");
+            sfxObj.transform.position = transform.position;
+            AudioSource source = sfxObj.AddComponent<AudioSource>();
+            source.clip = breakSfx;
+            source.spatialBlend = 0f; // 2D (거리 무관)
+            source.volume = breakSfxVolume;
+            source.Play();
+            Destroy(sfxObj, breakSfx.length + 0.1f);
+        }
+
+        // 3. 소환된 드론들 모두 제거 부분: 스폰된 드론들은 게임 내에 남도록 유지
+        // ClearAllDrones();
+
+        // 4. 스포너 파괴가 아닌 비활성화 상태로 전환 (부활 시 켜지게)
+        gameObject.SetActive(false);
+    }
+
+    private void ClearAllDrones()
+    {
+        CleanupNulls();
+        foreach (var drone in alive)
+        {
+            if (drone != null)
+            {
+                Destroy(drone);
+            }
+        }
+        alive.Clear();
+    }
+
+    private void OnDestroy()
+    {
+        PlayerHealth.OnPlayerRespawn -= ResetSpawner;
+    }
+
+    private void ResetSpawner()
+    {
+        currentHP = maxHP;
+        isBroken = false;
+        timer = -startDelay;
+        ClearAllDrones();
+        gameObject.SetActive(true);
+    }
+
+    // 안전장치: 투사체의 이름으로 충돌 감지
+    private void OnTriggerEnter(Collider other)
+    {
+        if (isBroken) return;
+
+        // Projectile 이름에 "BlackInkProjectile(Clone)" 등이 포함되어 있는지 확인
+        if (other.name.Contains("BlackInkProjectile"))
+        {
+             Break();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (requirePlayerInRange)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, activationRange);
+        }
     }
 }
