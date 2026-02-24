@@ -240,6 +240,7 @@ public class BossController : MonoBehaviour
 
         if (wideAreaQuad != null) wideAreaQuad.SetActive(false);
         if (platformGroup != null) platformGroup.SetActive(false);
+        ClearBlueInkDecals();
 
         // 착지
         moveTime = 0f;
@@ -324,11 +325,15 @@ public class BossController : MonoBehaviour
         pattern4Elapsed = 0f;
         while (pattern4Elapsed < timeLimit)
         {
+            // 그로기 상태가 되면 루프 탈출
             if (health.currentStatus != BossHealth.BossState.Normal) break;
+
             pattern4Elapsed += Time.deltaTime;
             if (explosionTimerBar != null) explosionTimerBar.fillAmount = pattern4Elapsed / timeLimit;
             yield return null;
         }
+        // [중요 추가] 루프를 빠져나오자마자 변수를 0으로 리셋하여 UI가 꺼지게 함
+        pattern4Elapsed = 0f;
 
         if (health.currentStatus == BossHealth.BossState.Normal && bigExplosionEffect != null)
         {
@@ -356,6 +361,7 @@ public class BossController : MonoBehaviour
     void HandleGroggyStart()
     {
         if (playerController != null) playerController.enabled = true; // 그로기 시 플레이어 경직 강제 해제
+        pattern4Elapsed = 0f;
         DisableAllPatternObjects();
         StopAllCoroutines();
         StartCoroutine(GroggyDownAnimation());
@@ -384,6 +390,23 @@ public class BossController : MonoBehaviour
             Quaternion targetRot = Quaternion.LookRotation(direction);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 5f);
         }
+    }
+
+    // 블루 잉크 데칼을 모두 찾아 지우는 함수
+    private void ClearBlueInkDecals()
+    {
+        // 씬에 있는 모든 게임 오브젝트를 탐색 (성능을 위해 태그를 쓰는 것이 좋지만, 이름으로도 가능합니다)
+        GameObject[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+
+        foreach (GameObject obj in allObjects)
+        {
+            // 이름에 "BlueInkDecalObject"가 포함되어 있는지 확인
+            if (obj.name.Contains("BlueInkDecalObject"))
+            {
+                Destroy(obj);
+            }
+        }
+        Debug.Log("패턴 2 종료: 모든 BlueInkDecalObject를 제거했습니다.");
     }
 
     void SpawnFireTrail(Vector3 start, Vector3 end)
