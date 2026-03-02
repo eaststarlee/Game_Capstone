@@ -26,6 +26,9 @@ public class BossHealth : MonoBehaviour
     [Header("클리어 시 비활성화할 오브젝트들")]
     public List<GameObject> objectsToDisableOnDefeat = new List<GameObject>();
 
+    [Header("씬 이동 관리")]
+    public SceneController sceneController;
+
     private CharacterController playerController;
 
     private void Awake()
@@ -86,6 +89,13 @@ public class BossHealth : MonoBehaviour
         if (currentStatus == BossState.Defeated) return;
         currentStatus = BossState.Defeated;
 
+        // 보스 사망 시 옐로우 잉크 자동 획득
+        BossReward reward = GetComponent<BossReward>();
+        if (reward != null)
+        {
+            reward.GiveYellowInk();
+        }
+
         if (uiController != null) uiController.SetVisible(false);
         if (playerController != null) playerController.enabled = true;
 
@@ -101,7 +111,17 @@ public class BossHealth : MonoBehaviour
             if (obj != null) obj.SetActive(false);
         }
 
-        gameObject.SetActive(false);
+        // 씬 전환 명령
+        if (sceneController != null)
+        {
+            sceneController.ClearBossAndLoadNextStage();
+        }
+        else
+        {
+            Debug.LogWarning("SceneController(GameManager) 연결 필요");
+        }
+
+        gameObject.SetActive(false); // 보스 비활성화
     }
 
     public void ResetHP()
