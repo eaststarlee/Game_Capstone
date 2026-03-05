@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI; // Image 컴포넌트 제어용
 using TMPro;
+using System.Collections;
 
 public class BossUIController : MonoBehaviour
 {
@@ -23,6 +24,9 @@ public class BossUIController : MonoBehaviour
 
     [Header("설정")]
     public float lerpSpeed = 5f;
+
+    [Header("가이드 팝업 메시지")]
+    public TextMeshProUGUI patternWarningText; // 패턴 경고용 텍스트 UI
 
     private void Start()
     {
@@ -85,5 +89,24 @@ public class BossUIController : MonoBehaviour
         {
             hpCanvasRoot.SetActive(visible);
         }
+    }
+    // 메시지를 5초간 띄우는 함수
+    public void ShowPatternMessage(string message)
+    {
+        if (patternWarningText != null)
+        {
+            StopAllCoroutines(); // 이전 메시지가 있다면 중단
+            StartCoroutine(DisplayMessageRoutine(message));
+        }
+    }
+
+    private IEnumerator DisplayMessageRoutine(string message)
+    {
+        patternWarningText.text = message;
+        patternWarningText.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(5f);
+
+        patternWarningText.gameObject.SetActive(false);
     }
 }

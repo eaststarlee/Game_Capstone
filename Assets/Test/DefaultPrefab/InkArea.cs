@@ -10,7 +10,7 @@ public class InkArea : MonoBehaviour
     public float speedMultiplier = 1f;
 
     [Header("Blue: Auto Super Jump")]
-    public float superJumpForce = 8f;
+    public float superJumpForce = 12f;
 
     [Header("Yellow: Wall Stick")]
     public bool enableWallRun = false;

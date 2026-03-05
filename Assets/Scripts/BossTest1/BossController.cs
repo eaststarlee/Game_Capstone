@@ -17,6 +17,8 @@ public class BossController : MonoBehaviour
 
     [Header("보호 시스템")]
     public GameObject weakPointShield;
+    public GameObject initialInvisibleBarrier;
+    public GameObject pathBlocker;
 
     [Header("거리 설정")]
     public float detectionRange = 15f;
@@ -79,6 +81,9 @@ public class BossController : MonoBehaviour
 
         if (playerTransform != null)
             playerController = playerTransform.GetComponent<CharacterController>();
+
+        if (initialInvisibleBarrier != null)
+            initialInvisibleBarrier.SetActive(true);
 
         if (health != null)
         {
@@ -206,6 +211,7 @@ public class BossController : MonoBehaviour
     // --- 수정된 패턴 2: 착지 안전장치 강화 ---
     IEnumerator StartPattern2()
     {
+        uiController?.ShowPatternMessage("보스가 지면 폭격을 준비 중입니다! 가장 높은 발판 위로 대피하세요!");
         agent.enabled = false;
         Vector3 targetAirPos = bossCenterAnchor.position + Vector3.up * flyHeight;
         float moveTime = 0f;
@@ -223,10 +229,10 @@ public class BossController : MonoBehaviour
         {
             wideAreaQuad.SetActive(true);
             float scaleTimer = 0f;
-            while (scaleTimer < 5f)
+            while (scaleTimer < 7f)
             {
                 scaleTimer += Time.deltaTime;
-                wideAreaQuad.transform.localScale = Vector3.Lerp(new Vector3(0.1f, 0.1f, 5f), new Vector3(1f, 1f, 5f), scaleTimer / 5f);
+                wideAreaQuad.transform.localScale = Vector3.Lerp(new Vector3(0.1f, 0.1f, 5f), new Vector3(1f, 1f, 5f), scaleTimer / 7f);
                 yield return null;
             }
         }
@@ -309,6 +315,7 @@ public class BossController : MonoBehaviour
 
     IEnumerator StartPattern4()
     {
+        uiController?.ShowPatternMessage("보스가 피할 수 없는 폭발을 충전 중입니다! 보스 머리 위 약점을 공격해 멈추세요!");
         agent.enabled = false;
         Vector3 targetPos4 = bossCenterAnchor.position + Vector3.up * pattern4Height;
         float moveTime = 0f;
@@ -418,24 +425,64 @@ public class BossController : MonoBehaviour
         {
             Vector3 spawnPos = Vector3.Lerp(start, end, (float)i / fireCount);
             GameObject fire = Instantiate(firePrefab, spawnPos, Quaternion.identity);
-            Destroy(fire, 10f);
+            Destroy(fire, 7f);
         }
     }
 
-    private void StartCombat() { isUIVisible = true; uiController?.SetVisible(true); }
+    private void StartCombat()
+    {
+        isUIVisible = true;
+        uiController?.SetVisible(true);
+
+        // 전투 시작 시 투명 배리어 해제 (이제부터 타격 가능)
+        if (initialInvisibleBarrier != null)
+        {
+            initialInvisibleBarrier.SetActive(false);
+            Debug.Log("보스 전투 시작: 투명 배리어가 해제되었습니다.");
+        }
+
+        if (pathBlocker != null)
+        {
+            pathBlocker.SetActive(false);
+            Debug.Log("보스전 시작: 진입로가 차단/비활성화되었습니다.");
+        }
+    }
 
     private void ResetBossCombat()
     {
         StopAllCoroutines();
         if (playerController != null) playerController.enabled = true;
+
         isPatternRunning = false;
         isUIVisible = false;
         uiController?.SetVisible(false);
         defaultTimer = 0f;
         health.ResetHP();
-        agent.enabled = true;
-        transform.position = initialPosition;
-        if (ghostSpawner != null) ghostSpawner.ClearAllDrones();
+        if (initialInvisibleBarrier != null)
+        {
+            initialInvisibleBarrier.SetActive(true);
+        }
+        if (pathBlocker != null)
+        {
+            pathBlocker.SetActive(true);
+            Debug.Log("전투 리셋: 진입로가 다시 활성화되었습니다.");
+        }
+        if (agent != null)
+        {
+            agent.enabled = true;
+            agent.isStopped = false;
+            agent.speed = normalSpeed;
+            // initialPosition 대신 Boss Center Anchor의 위치로 이동 명령
+            if (bossCenterAnchor != null)
+            {
+                agent.SetDestination(bossCenterAnchor.position);
+            }
+            else
+            {
+                agent.SetDestination(initialPosition);
+            }
+        }
+
         DisableAllPatternObjects();
     }
 

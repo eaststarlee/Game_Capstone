@@ -36,6 +36,9 @@ public class PlayerHealth : MonoBehaviour
     public AudioClip respawnSfx;
     [Range(0f, 1f)] public float sfxVolume = 1f;
 
+    [Header("Auto Regen System")] // 회복 온/오프
+    public bool canRegen = true; // 이 변수를 외부에서 제어합니다.
+
     public static PlayerHealth Instance;
 
     private void Awake()
@@ -75,7 +78,7 @@ public class PlayerHealth : MonoBehaviour
     private void HandleAutoRegen()
     {
         // 체력이 이미 가득 찼으면 로직 중단
-        if (currentHealth >= maxHealth)
+        if (currentHealth >= maxHealth || !canRegen)
         {
             currentRegenTimer = 0f;
             return;

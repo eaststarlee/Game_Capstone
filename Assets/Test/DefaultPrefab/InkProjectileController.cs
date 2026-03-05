@@ -207,7 +207,7 @@ public class InkProjectileController : MonoBehaviour
                     break;
 
                 case InkType.Blue:
-                    if (area.superJumpForce < 8f) area.superJumpForce = 8f;
+                    if (area.superJumpForce < 12f) area.superJumpForce = 12f;
                     break;
 
                 case InkType.Yellow:
