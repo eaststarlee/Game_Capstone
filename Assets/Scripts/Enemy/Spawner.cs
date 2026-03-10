@@ -70,6 +70,15 @@ public class DroneSpawner : MonoBehaviour, IBreakable
     public int maxHP = 5;
     private int currentHP;
 
+    [Header("UI")]
+    public WorldSpaceHealthBar healthBar;
+
+    [Header("Health Recovery & Grace Period")]
+    [Tooltip("사정거리를 벗어난 후 체력이 초기화되기까지의 유예 시간")]
+    public float gracePeriod = 3f;
+    private float regenTimer = 0f;
+    private bool isPlayerInside = false; // 현재 플레이어가 범위 안에 있는지 여부
+
     private readonly List<GameObject> alive = new List<GameObject>();
     private float timer = 0f;
     private bool spawning = false;
@@ -93,12 +102,15 @@ public class DroneSpawner : MonoBehaviour, IBreakable
         idleAudioSource.spatialBlend = 0f; // 2D 음향 (거리에 상관없이 볼륨 고정)
         idleAudioSource.loop = true;
         idleAudioSource.playOnAwake = false;
+
+        if (healthBar != null) healthBar.UpdateHealthBar(currentHP, maxHP);
     }
 
     private void Update()
     {
         if (isBroken)
         {
+            if (healthBar != null) healthBar.gameObject.SetActive(false);
             if (idleAudioSource != null && idleAudioSource.isPlaying)
                 idleAudioSource.Stop();
             return;
@@ -108,6 +120,65 @@ public class DroneSpawner : MonoBehaviour, IBreakable
         CleanupNulls();
 
         bool isPlayerInRange = true;
+
+        // HP 활성화 로직
+
+        // 1. 거리 체크
+        isPlayerInside = CheckPlayerInRange();
+
+        // 2. 상태별 UI 및 회복 로직
+        if (isPlayerInside)
+        {
+            // [범위 안]
+            regenTimer = 0f; // 타이머 리셋
+            if (healthBar != null) healthBar.SetStatusColor(true); // 활성화 색상(초록)
+
+            // 사운드 재생
+            if (idleLoopSfx != null && !idleAudioSource.isPlaying) idleAudioSource.Play();
+        }
+        else
+        {
+            // [범위 밖]
+            if (idleAudioSource != null && idleAudioSource.isPlaying) idleAudioSource.Stop();
+
+            if (currentHP < maxHP)
+            {
+                // 체력이 깎인 상태로 밖에 나갔다면
+                regenTimer += Time.deltaTime;
+
+                if (regenTimer < gracePeriod)
+                {
+                    // 유예 시간 동안: 깜빡거림 연출
+                    if (healthBar != null) healthBar.FlashUpdate();
+                }
+                else
+                {
+                    // 유예 시간 종료: 체력 초기화 및 회색 고정
+                    currentHP = maxHP;
+                    regenTimer = 0f;
+                    if (healthBar != null)
+                    {
+                        healthBar.UpdateHealthBar(currentHP, maxHP);
+                        healthBar.SetStatusColor(false);
+                    }
+                }
+            }
+            else
+            {
+                // 체력이 가득 찬 상태로 밖에 있다면 그냥 회색
+                if (healthBar != null) healthBar.SetStatusColor(false);
+            }
+
+            return; // 범위 밖이면 스폰 로직 실행 안 함
+        }
+
+        // 3. 스폰 타이머 (범위 안일 때만 실행)
+        timer += Time.deltaTime;
+        if (!spawning && timer >= waveInterval)
+        {
+            timer = 0f;
+            StartCoroutine(SpawnWave());
+        }
 
         if (requirePlayerInRange && playerTarget != null)
         {
@@ -233,13 +304,22 @@ public class DroneSpawner : MonoBehaviour, IBreakable
     {
         if (isBroken) return;
 
+        // [핵심 추가] 범위 밖에 있을 때는 데미지를 입지 않음
+        if (!isPlayerInside)
+        {
+            if (debugLog) Debug.Log("[Spawner] Out of range: Attack Ignored.");
+            return;
+        }
+
         // 체력 감소
         currentHP--;
 
-        // 체력이 남아있다면 파괴되지 않음
+        // HP UI 업데이트 추가
+        if (healthBar != null) healthBar.UpdateHealthBar(currentHP, maxHP);
+
         if (currentHP > 0)
         {
-            // (선택) 피격 이펙트나 사운드를 여기에 추가할 수 있습니다.
+            // 피격 피드백 (필요 시 추가)
             return;
         }
 
@@ -303,6 +383,11 @@ public class DroneSpawner : MonoBehaviour, IBreakable
         timer = -startDelay;
         ClearAllDrones();
         gameObject.SetActive(true);
+        if (healthBar != null)
+        {
+            healthBar.UpdateHealthBar(currentHP, maxHP);
+            healthBar.gameObject.SetActive(true); // 리스폰 시 UI 다시 켜기
+        }
     }
 
     // 안전장치: 투사체의 이름으로 충돌 감지
@@ -324,5 +409,18 @@ public class DroneSpawner : MonoBehaviour, IBreakable
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.position, activationRange);
         }
+    }
+
+    private bool CheckPlayerInRange()
+    {
+        // 1. 타겟이 없거나 거리 체크가 필요 없는 설정이라면 항상 true 반환
+        if (!requirePlayerInRange || playerTarget == null)
+            return true;
+
+        // 2. 실제 거리 계산
+        float dist = Vector3.Distance(transform.position, playerTarget.position);
+
+        // 3. 설정한 activationRange 이내에 있으면 true
+        return dist <= activationRange;
     }
 }

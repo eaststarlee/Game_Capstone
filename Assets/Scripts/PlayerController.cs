@@ -99,6 +99,16 @@ public class PlayerController : MonoBehaviour
         walkAudioSource.playOnAwake = false;
     }
 
+    void Start()
+    {
+        // UI 관리자(CameraAddOn이 붙은 오브젝트 등)에게 자신을 등록
+        // 만약 CameraAddOn이 싱글톤이라면 다음과 같이 접근 가능합니다.
+        if (CameraAddOn.Instance != null)
+        {
+            CameraAddOn.Instance.RegisterPlayer(this);
+        }
+    }
+
     private void Update()
     {
         if (!inputEnabled) return;

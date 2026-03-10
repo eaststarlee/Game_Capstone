@@ -1,34 +1,50 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class ReturnPage : MonoBehaviour
 {
-    [Header("설정")]
-    [SerializeField] private GameObject firstPage; // 처음에 보여줄 오브젝트
-    [SerializeField] private GameObject[] otherPages; // 나머지 페이지들 (선택 사항)
-
-    // 오브젝트가 활성화될 때마다 실행됩니다.
-    private void OnEnable()
+    [System.Serializable]
+    public class PagePair
     {
-        ResetUI();
+        public string pairName;      // 구분용 이름
+        public GameObject mainPage;  // Page 1 (부모)
+        public GameObject subPage;   // Page 2 (자식)
     }
 
-    public void ResetUI()
-    {
-        // 1. 첫 페이지가 할당되어 있다면 활성화
-        if (firstPage != null)
-        {
-            firstPage.SetActive(true);
-        }
+    [Header("페이지 쌍 설정")]
+    [SerializeField] private List<PagePair> pagePairs = new List<PagePair>();
 
-        // 2. 나머지 페이지들은 모두 비활성화 (필요한 경우)
-        if (otherPages != null)
+    private void OnEnable()
+    {
+        ResetAllToMain();
+    }
+
+    private void Update()
+    {
+        // 실시간으로 감시: Page 2가 꺼져있는데 Page 1도 꺼져있다면 Page 1을 켬
+        CheckPageStatus();
+    }
+
+    public void ResetAllToMain()
+    {
+        foreach (var pair in pagePairs)
         {
-            foreach (GameObject page in otherPages)
+            if (pair.mainPage != null) pair.mainPage.SetActive(true);
+            if (pair.subPage != null) pair.subPage.SetActive(false);
+        }
+    }
+
+    private void CheckPageStatus()
+    {
+        foreach (var pair in pagePairs)
+        {
+            // 예외 처리: 할당 안 된 경우 패스
+            if (pair.mainPage == null || pair.subPage == null) continue;
+
+            // Page 2(자식)가 비활성화 되었는데, Page 1(부모)도 꺼져 있다면?
+            if (!pair.subPage.activeSelf && !pair.mainPage.activeSelf)
             {
-                if (page != null && page != firstPage)
-                {
-                    page.SetActive(false);
-                }
+                pair.mainPage.SetActive(true);
             }
         }
     }
