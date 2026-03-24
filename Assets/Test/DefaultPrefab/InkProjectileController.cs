@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -77,7 +77,14 @@ public class InkProjectileController : MonoBehaviour
         // 데칼 / 잉크 영역 생성
         if (inkDecalObjectPrefab != null)
         {
-            if (inkType == InkType.Yellow)
+            // 레이어가 "Wall"이거나 태그가 "Wall"인 경우 모두 포함
+            bool isWall = (hitCol.gameObject.layer == LayerMask.NameToLayer("Wall")) || hitCol.CompareTag("Wall");
+
+            if (inkType == InkType.Blue && isWall)
+            {
+                // Wall(벽)에는 파란 잉크가 칠해지지 않고, 바로 아래의 투사체 파괴 로직으로 넘어감
+            }
+            else if (inkType == InkType.Yellow)
             {
                 StartCoroutine(SpreadYellowInkRoutine(collision));
             }
