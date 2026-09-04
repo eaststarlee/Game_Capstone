@@ -1,0 +1,37 @@
+﻿using UnityEngine;
+using UnityEngine.UI;
+
+public class TestInventoryButtons : MonoBehaviour
+{
+    public Inventory inventory;  // 연결된 Inventory
+    public Button addREDButton;
+    public Button addORANGEButton;
+    public Button addYELLOWButton;
+    public Button addGREENButton;
+    public Button addBLUEButton;
+    public Button addDARKBLUEButton;
+    public Button addPURPLEButton;
+    public CircularInventoryUI circularInventoryUI; // 인스펙터에 드래그 앤 드롭
+
+    void Start()
+    {
+        // 버튼 클릭 이벤트 등록
+        addREDButton.onClick.AddListener(() => AddItem("RED"));
+        addORANGEButton.onClick.AddListener(() => AddItem("ORANGE"));
+        addYELLOWButton.onClick.AddListener(() => AddItem("YELLOW"));
+        addGREENButton.onClick.AddListener(() => AddItem("GREEN"));
+        addBLUEButton.onClick.AddListener(() => AddItem("BLUE"));
+        addDARKBLUEButton.onClick.AddListener(() => AddItem("DARKBLUE"));
+        addPURPLEButton.onClick.AddListener(() => AddItem("PURPLE"));
+    }
+
+    void AddItem(string itemName)
+    {
+        // 현재 선택 슬롯에 추가
+        int selected = inventory.selectedIndex;
+        inventory.AddItemToSlot(selected, itemName);
+        circularInventoryUI.RefreshUI();
+
+        Debug.Log($"Added {itemName} to slot {selected + 1}");
+    }
+}

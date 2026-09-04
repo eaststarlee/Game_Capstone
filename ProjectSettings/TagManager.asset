@@ -3,7 +3,13 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Breakable
+  - Enemy
+  - Boss
+  - WeakPoint
+  - Wall
+  - Ceiling
   layers:
   - Default
   - TransparentFX
@@ -11,13 +17,13 @@ TagManager:
   - Ground
   - Water
   - UI
-  - Player
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Weapon
+  - Enemy
+  - Bullet
+  - Invisible Ground
+  - Invisible Object
+  - BossBody
+  - BossWeak
   - 
   - 
   - 
